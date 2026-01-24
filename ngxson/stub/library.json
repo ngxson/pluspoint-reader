@@ -1,0 +1,7 @@
+{
+  "name": "stub",
+  "version": "1.0.0",
+  "description": "stub",
+  "platforms": "espressif32",
+  "frameworks": ["arduino", "espidf"]
+}

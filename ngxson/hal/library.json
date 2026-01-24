@@ -1,0 +1,7 @@
+{
+  "name": "ngxson",
+  "version": "1.0.0",
+  "description": "ngxson",
+  "platforms": "espressif32",
+  "frameworks": ["arduino", "espidf"]
+}
