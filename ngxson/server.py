@@ -82,6 +82,8 @@ class SdCardHandler:
     offset_int = int(offset) if offset else 0
     length_int = int(length) if length else -1
 
+    print(f"[SdCard] Reading {path} (offset={offset_int}, length={length_int})")
+
     if not os.path.exists(resolved) or os.path.isdir(resolved):
       return ""
 
@@ -125,6 +127,8 @@ class SdCardHandler:
     except Exception as e:
       print(f"[SdCard] Error decoding base64 for {path}: {e}", file=sys.stderr)
       return 0
+    
+    print(f"[SdCard] Writing to {path} (inplace={is_inplace}, offset={offset_int}, bytes={len(data)})")
 
     try:
       # Ensure parent directory exists
@@ -153,6 +157,7 @@ class SdCardHandler:
   def handle_fs_mkdir(self, path: str) -> int:
     """Create directory. Returns 0 on success."""
     resolved = self._resolve_path(path)
+    print(f"[SdCard] Creating directory {path}")
 
     try:
       os.makedirs(resolved, exist_ok=True)
@@ -164,6 +169,7 @@ class SdCardHandler:
   def handle_fs_rm(self, path: str) -> int:
     """Remove file or directory. Returns 0 on success."""
     resolved = self._resolve_path(path)
+    print(f"[SdCard] Removing {path}")
 
     if not os.path.exists(resolved):
       return -1

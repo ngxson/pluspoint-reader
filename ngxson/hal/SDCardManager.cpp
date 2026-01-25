@@ -212,6 +212,7 @@ bool SDCardManager::openFileForRead(const char* moduleName, const char* path, Fs
     Serial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
     return false;
   }
+  file = FsFile(path, O_RDONLY);
   return true;
 #endif
 }
@@ -231,13 +232,12 @@ bool SDCardManager::openFileForWrite(const char* moduleName, const char* path, F
   Serial.printf("[%lu] [FS ] Emulated openFileForWrite: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
-    Serial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
-    return false;
-  }
-  if (size == -2) {
+    Serial.printf("[%lu] [FS ] File does not exist and will be created\n", millis());
+  } else if (size == -2) {
     Serial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
     return false;
   }
+  file = FsFile(path, O_WRONLY | O_CREAT);
   return true;
 #endif
 }
@@ -267,17 +267,23 @@ bool SDCardManager::removeDir(const char* path) {
 //
 
 FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
-  Serial.printf("[%lu] [FS ] Emulated FsFile open: %s\n", millis(), path);
+  Serial.printf("[%lu] [FSF] Emulated FsFile open: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
-    Serial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
-    open = false;
-    fileSizeBytes = 0;
-  } else if (isDir) {
-    Serial.printf("[%lu] [FS ] Path is a directory: %s\n", millis(), path);
-    EmulationUtils::Lock lock;
+    if (oflag & O_CREAT) {
+      Serial.printf("[%lu] [FSF] File does not exist, will be created: %s\n", millis(), path);
+      open = true;
+      fileSizeBytes = 0;
+    } else {
+      Serial.printf("[%lu] [FSF] File not found: %s\n", millis(), path);
+      open = false;
+    }
+  } else if (size == -2) {
+    Serial.printf("[%lu] [FSF] Path is a directory: %s\n", millis(), path);
     open = true;
+    isDir = true;
     // get directory entries
+    EmulationUtils::Lock lock;
     EmulationUtils::sendCmd(EmulationUtils::CMD_FS_LIST, path);
     dirEntries.clear();
     while (true) {
@@ -287,10 +293,11 @@ FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
       }
       dirEntries.push_back(resp);
     }
-    Serial.printf("[%lu] [FS ] Directory has %u entries\n", millis(), (unsigned)dirEntries.size());
+    Serial.printf("[%lu] [FSF] Directory has %u entries\n", millis(), (unsigned)dirEntries.size());
     dirIndex = 0;
     fileSizeBytes = 0;
   } else {
+    Serial.printf("[%lu] [FSF] File opened, size: %lld bytes: %s\n", millis(), size, path);
     open = true;
     fileSizeBytes = static_cast<size_t>(size);
   }
@@ -319,6 +326,7 @@ int FsFile::read() {
 
 size_t FsFile::write(const uint8_t* buffer, size_t size) {
   if (!open || isDir) return 0;
+  Serial.printf("[%lu] [FSF] Emulated FsFile write: %s (size: %u)\n", millis(), path.c_str(), (unsigned)size);
   std::string b64 = EmulationUtils::base64_encode((const char*)buffer, size);
   EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_WRITE, path.c_str(), b64.c_str(), String(filePos).c_str(), "1");

@@ -10,7 +10,7 @@ Philosophical design behind this fork:
 - For any changes fall outside of these category, please send your PR to upstream project
 
 Things that this fork is set out to support:
-- [ ] Emulation (for a better DX)
+- [x] Emulation (for a better DX)
 - [ ] Allow runtime app, similar to a Flipper Zero (TBD how to do it)
 
 ## Emulated
