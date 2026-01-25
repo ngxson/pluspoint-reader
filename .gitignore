@@ -6,3 +6,4 @@ lib/EpdFont/fontsrc
 *.generated.h
 build
 **/__pycache__/
+.sdcard

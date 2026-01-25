@@ -282,6 +282,9 @@ bool isUsbConnected() {
 }
 
 bool isWakeupAfterFlashing() {
+#ifdef EMULATED
+  return true;
+#endif
   const auto wakeupCause = esp_sleep_get_wakeup_cause();
   const auto resetReason = esp_reset_reason();
 

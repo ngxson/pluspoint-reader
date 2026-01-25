@@ -29,6 +29,7 @@ std::vector<String> SDCardManager::listFiles(const char* path, int maxFiles) {
   return SdMan.listFiles(path, maxFiles);
 #else
   Serial.printf("[%lu] [FS ] Emulated listFiles: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_LIST, path);
   std::vector<String> output;
   for (int i = 0; i < maxFiles; ++i) {
@@ -47,12 +48,14 @@ String SDCardManager::readFile(const char* path) {
   return SdMan.readFile(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated readFile: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_READ, path, "0", "-1");
   return EmulationUtils::recvRespStr();
 #endif
 }
 
 static int64_t getFileSizeEmulated(const char* path) {
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_STAT, path);
   return EmulationUtils::recvRespInt64();
 }
@@ -62,6 +65,7 @@ bool SDCardManager::readFileToStream(const char* path, Print& out, size_t chunkS
   return SdMan.readFileToStream(path, out, chunkSize);
 #else
   Serial.printf("[%lu] [FS ] Emulated readFileToStream: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
     Serial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
@@ -88,6 +92,7 @@ size_t SDCardManager::readFileToBuffer(const char* path, char* buffer, size_t bu
   return SdMan.readFileToBuffer(path, buffer, bufferSize, maxBytes);
 #else
   Serial.printf("[%lu] [FS ] Emulated readFileToBuffer: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
     Serial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
@@ -118,6 +123,7 @@ bool SDCardManager::writeFile(const char* path, const String& content) {
   return SdMan.writeFile(path, content);
 #else
   Serial.printf("[%lu] [FS ] Emulated writeFile: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   std::string b64 = EmulationUtils::base64_encode((char*)content.c_str(), content.length());
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_WRITE, path, b64.c_str(), "0", "0");
   EmulationUtils::recvRespInt64(); // unused for now
@@ -130,6 +136,7 @@ bool SDCardManager::ensureDirectoryExists(const char* path) {
   return SdMan.ensureDirectoryExists(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated ensureDirectoryExists: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_MKDIR, path);
   EmulationUtils::recvRespInt64(); // unused for now
   return true;
@@ -149,6 +156,8 @@ bool SDCardManager::mkdir(const char* path, const bool pFlag) {
 #ifndef EMULATED
   return SdMan.mkdir(path, pFlag);
 #else
+  Serial.printf("[%lu] [FS ] Emulated mkdir: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_MKDIR, path);
   EmulationUtils::recvRespInt64(); // unused for now
   return true;
@@ -170,6 +179,7 @@ bool SDCardManager::remove(const char* path) {
   return SdMan.remove(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated remove: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_RM, path);
   EmulationUtils::recvRespInt64(); // unused for now
   return true;
@@ -181,6 +191,7 @@ bool SDCardManager::rmdir(const char* path) {
   return SdMan.rmdir(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated rmdir: %s\n", millis(), path);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_RM, path);
   EmulationUtils::recvRespInt64(); // unused for now
   return true;
@@ -264,6 +275,7 @@ FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
     fileSizeBytes = 0;
   } else if (isDir) {
     Serial.printf("[%lu] [FS ] Path is a directory: %s\n", millis(), path);
+    EmulationUtils::Lock lock;
     open = true;
     // get directory entries
     EmulationUtils::sendCmd(EmulationUtils::CMD_FS_LIST, path);
@@ -289,6 +301,7 @@ int FsFile::read(void* buf, size_t count) {
   size_t bytesAvailable = (fileSizeBytes > filePos) ? (fileSizeBytes - filePos) : 0;
   if (bytesAvailable == 0) return 0;
   size_t toRead = std::min(count, bytesAvailable);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_READ, path.c_str(), String(filePos).c_str(), String(toRead).c_str());
   auto data = EmulationUtils::recvRespBuf();
   size_t bytesRead = data.size();
@@ -307,6 +320,7 @@ int FsFile::read() {
 size_t FsFile::write(const uint8_t* buffer, size_t size) {
   if (!open || isDir) return 0;
   std::string b64 = EmulationUtils::base64_encode((const char*)buffer, size);
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_FS_WRITE, path.c_str(), b64.c_str(), String(filePos).c_str(), "1");
   EmulationUtils::recvRespInt64(); // unused for now
   filePos += size;

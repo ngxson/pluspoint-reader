@@ -71,9 +71,10 @@ void EInkDisplay::displayBuffer(RefreshMode mode) {
     einkDisplay.displayBuffer(static_cast<HalRealImpl::EInkDisplay::RefreshMode>(mode));
 #else
     Serial.printf("[%lu] [   ] Emulated display buffer with mode %d\n", millis(), static_cast<int>(mode));
+    EmulationUtils::Lock lock;
     std::string b64 = EmulationUtils::base64_encode(reinterpret_cast<char*>(emuFramebuffer0), BUFFER_SIZE);
     EmulationUtils::sendCmd(EmulationUtils::CMD_DISPLAY, b64.c_str());
-    // no response expected
+    EmulationUtils::recvRespInt64(); // dummy
 #endif
 }
 
@@ -84,7 +85,7 @@ void EInkDisplay::refreshDisplay(RefreshMode mode, bool turnOffScreen) {
     Serial.printf("[%lu] [   ] Emulated refresh display with mode %d, turnOffScreen %d\n", millis(), static_cast<int>(mode), turnOffScreen);
     // emulated delay
     if (mode == RefreshMode::FAST_REFRESH) {
-      delay(500);
+      delay(200);
     } else if (mode == RefreshMode::HALF_REFRESH) {
       delay(1000);
     } else if (mode == RefreshMode::FULL_REFRESH) {

@@ -37,7 +37,13 @@ void InputManager::begin() {
   pinMode(POWER_BUTTON_PIN, INPUT_PULLUP);
   analogSetAttenuation(ADC_11db);
 #else
-  // no-op
+  // wait for emulation to be ready
+  int64_t res = 0;
+  while (res != 123456) {
+    EmulationUtils::Lock lock;
+    EmulationUtils::sendCmd(EmulationUtils::CMD_PING, "dummy");
+    res = EmulationUtils::recvRespInt64(500);
+  }
 #endif
 }
 
@@ -76,6 +82,7 @@ uint8_t InputManager::getState() {
 
   return state;
 #else
+  EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_BUTTON, "read");
   auto res = EmulationUtils::recvRespInt64();
   assert(res >= 0);
