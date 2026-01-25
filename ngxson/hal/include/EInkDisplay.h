@@ -99,7 +99,7 @@ class EInkDisplay {
   void writeRamBuffer(uint8_t ramBuffer, const uint8_t* data, uint32_t size);
 
   // Real implementation
-  HalRealImpl::EInkDisplay einkDisplay;
+  HalRealImpl::EInkDisplay* einkDisplay;
 
   // Emulated display support
   uint8_t* emuFramebuffer0 = nullptr;

@@ -3,22 +3,25 @@
 #include <EmulationUtils.h>
 #include <string>
 
-EInkDisplay::EInkDisplay(int8_t sclk, int8_t mosi, int8_t cs, int8_t dc, int8_t rst, int8_t busy) : einkDisplay(sclk, mosi, cs, dc, rst, busy) {
-#ifdef EMULATED
+EInkDisplay::EInkDisplay(int8_t sclk, int8_t mosi, int8_t cs, int8_t dc, int8_t rst, int8_t busy) {
+#ifndef EMULATED
+  einkDisplay = new HalRealImpl::EInkDisplay(sclk, mosi, cs, dc, rst, busy);
+#else
   emuFramebuffer0 = new uint8_t[BUFFER_SIZE];
 #endif
 }
 
 EInkDisplay::~EInkDisplay() {
-  if (emuFramebuffer0) {
-    delete[] emuFramebuffer0;
-    emuFramebuffer0 = nullptr;
-  }
+#ifndef EMULATED
+  delete einkDisplay;
+#else
+  delete[] emuFramebuffer0;
+#endif
 }
 
 void EInkDisplay::begin() {
 #ifndef EMULATED
-    einkDisplay.begin();
+    einkDisplay->begin();
 #else
     Serial.printf("[%lu] [   ] Emulated display initialized\n", millis());
     // no-op
@@ -27,7 +30,7 @@ void EInkDisplay::begin() {
 
 void EInkDisplay::clearScreen(uint8_t color) const {
 #ifndef EMULATED
-    einkDisplay.clearScreen(color);
+    einkDisplay->clearScreen(color);
 #else
     Serial.printf("[%lu] [   ] Emulated clear screen with color 0x%02X\n", millis(), color);
     memset(emuFramebuffer0, color, BUFFER_SIZE);
@@ -36,7 +39,7 @@ void EInkDisplay::clearScreen(uint8_t color) const {
 
 void EInkDisplay::drawImage(const uint8_t* imageData, uint16_t x, uint16_t y, uint16_t w, uint16_t h, bool fromProgmem) const {
 #ifndef EMULATED
-    einkDisplay.drawImage(imageData, x, y, w, h, fromProgmem);
+    einkDisplay->drawImage(imageData, x, y, w, h, fromProgmem);
 #else
     Serial.printf("[%lu] [   ] Emulated draw image at (%u, %u) with size %ux%u\n", millis(), x, y, w, h);
 
@@ -68,35 +71,34 @@ void EInkDisplay::drawImage(const uint8_t* imageData, uint16_t x, uint16_t y, ui
 
 void EInkDisplay::displayBuffer(RefreshMode mode) {
 #ifndef EMULATED
-    einkDisplay.displayBuffer(static_cast<HalRealImpl::EInkDisplay::RefreshMode>(mode));
+    einkDisplay->displayBuffer(static_cast<HalRealImpl::EInkDisplay::RefreshMode>(mode));
 #else
     Serial.printf("[%lu] [   ] Emulated display buffer with mode %d\n", millis(), static_cast<int>(mode));
     EmulationUtils::Lock lock;
-    std::string b64 = EmulationUtils::base64_encode(reinterpret_cast<char*>(emuFramebuffer0), BUFFER_SIZE);
-    EmulationUtils::sendCmd(EmulationUtils::CMD_DISPLAY, b64.c_str());
+    EmulationUtils::sendDisplayData(reinterpret_cast<char*>(emuFramebuffer0), BUFFER_SIZE);
     EmulationUtils::recvRespInt64(); // dummy
 #endif
 }
 
 void EInkDisplay::refreshDisplay(RefreshMode mode, bool turnOffScreen) {
 #ifndef EMULATED
-    einkDisplay.refreshDisplay(static_cast<HalRealImpl::EInkDisplay::RefreshMode>(mode), turnOffScreen);
+    einkDisplay->refreshDisplay(static_cast<HalRealImpl::EInkDisplay::RefreshMode>(mode), turnOffScreen);
 #else
     Serial.printf("[%lu] [   ] Emulated refresh display with mode %d, turnOffScreen %d\n", millis(), static_cast<int>(mode), turnOffScreen);
     // emulated delay
     if (mode == RefreshMode::FAST_REFRESH) {
-      delay(200);
+      // delay(50);
     } else if (mode == RefreshMode::HALF_REFRESH) {
-      delay(1000);
+      delay(500);
     } else if (mode == RefreshMode::FULL_REFRESH) {
-      delay(2000);
+      delay(1200);
     }
 #endif
 }
 
 void EInkDisplay::deepSleep() {
 #ifndef EMULATED
-    einkDisplay.deepSleep();
+    einkDisplay->deepSleep();
 #else
     Serial.printf("[%lu] [   ] Emulated deep sleep\n", millis());
     // no-op
@@ -105,7 +107,7 @@ void EInkDisplay::deepSleep() {
 
 uint8_t* EInkDisplay::getFrameBuffer() const {
 #ifndef EMULATED
-    return einkDisplay.getFrameBuffer();
+    return einkDisplay->getFrameBuffer();
 #else
     return emuFramebuffer0;
 #endif
@@ -113,7 +115,7 @@ uint8_t* EInkDisplay::getFrameBuffer() const {
 
 void EInkDisplay::copyGrayscaleBuffers(const uint8_t* lsbBuffer, const uint8_t* msbBuffer) {
 #ifndef EMULATED
-    einkDisplay.copyGrayscaleBuffers(lsbBuffer, msbBuffer);
+    einkDisplay->copyGrayscaleBuffers(lsbBuffer, msbBuffer);
 #else
     Serial.printf("[%lu] [   ] Emulated copy grayscale buffers\n", millis());
     // TODO: not sure what this does
@@ -122,7 +124,7 @@ void EInkDisplay::copyGrayscaleBuffers(const uint8_t* lsbBuffer, const uint8_t* 
 
 void EInkDisplay::copyGrayscaleLsbBuffers(const uint8_t* lsbBuffer) {
 #ifndef EMULATED
-    einkDisplay.copyGrayscaleLsbBuffers(lsbBuffer);
+    einkDisplay->copyGrayscaleLsbBuffers(lsbBuffer);
 #else
     Serial.printf("[%lu] [   ] Emulated copy grayscale LSB buffers\n", millis());
     // TODO: not sure what this does
@@ -131,7 +133,7 @@ void EInkDisplay::copyGrayscaleLsbBuffers(const uint8_t* lsbBuffer) {
 
 void EInkDisplay::copyGrayscaleMsbBuffers(const uint8_t* msbBuffer) {
 #ifndef EMULATED
-    einkDisplay.copyGrayscaleMsbBuffers(msbBuffer);
+    einkDisplay->copyGrayscaleMsbBuffers(msbBuffer);
 #else
     Serial.printf("[%lu] [   ] Emulated copy grayscale MSB buffers\n", millis());
     // TODO: not sure what this does
@@ -140,7 +142,7 @@ void EInkDisplay::copyGrayscaleMsbBuffers(const uint8_t* msbBuffer) {
 
 void EInkDisplay::cleanupGrayscaleBuffers(const uint8_t* bwBuffer) {
 #ifndef EMULATED
-    einkDisplay.cleanupGrayscaleBuffers(bwBuffer);
+    einkDisplay->cleanupGrayscaleBuffers(bwBuffer);
 #else
     Serial.printf("[%lu] [   ] Emulated cleanup grayscale buffers\n", millis());
     // TODO: not sure what this does
@@ -149,7 +151,7 @@ void EInkDisplay::cleanupGrayscaleBuffers(const uint8_t* bwBuffer) {
 
 void EInkDisplay::displayGrayBuffer(bool turnOffScreen) {
 #ifndef EMULATED
-    einkDisplay.displayGrayBuffer(turnOffScreen);
+    einkDisplay->displayGrayBuffer(turnOffScreen);
 #else
     Serial.printf("[%lu] [   ] Emulated display gray buffer\n", millis());
     // TODO: not sure what this does

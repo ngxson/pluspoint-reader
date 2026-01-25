@@ -56,6 +56,16 @@
       height: calc(100% - 4em);
     }
 
+    .ctrl-bottom {
+      display: flex;
+      justify-content: center;
+      gap: 1em;
+    }
+
+    .ctrl-bottom > button {
+      width: 100%;
+    }
+
     .log {
       height: calc(100% - 5em);
       width: 100%;
@@ -77,16 +87,19 @@
       <div class="screen-ctrl">
         <canvas id="screen" width="480" height="800" style="border:1px solid #555;"></canvas>
         <div class="ctrl-bottom">
-          <button id="btn0">Btn 0</button>
-          <button id="btn1">Btn 1</button>
-          <button id="btn2">Btn 2</button>
-          <button id="btn3">Btn 3</button>
+          <button id="btn0">0</button>
+          <button id="btn1">1</button>
+          <button id="btn2">2</button>
+          <button id="btn3">3</button>
         </div>
       </div>
       <div class="ctrl-right">
-        <button id="btnP">Pwr</button><br/><br/><br/>
-        <button id="btnU">Up</button><br/>
-        <button id="btnD">Down</button><br/>
+        <button id="btnP">P</button><br/>
+        <br/><br/><br/><br/>
+        <button id="btnU">U</button><br/>
+        <button id="btnD">D</button><br/>
+        <br/><br/><br/><br/>
+        <br/><br/><br/><br/>
       </div>
     </div>
 

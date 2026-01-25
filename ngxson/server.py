@@ -14,11 +14,20 @@ import serial
 import websockets
 from websockets.http11 import Response
 from websockets.server import WebSocketServerProtocol
+import glob
 
 
 # Serial port
 serial_port: serial.Serial | None = None
-SERIAL_DEVICE = "/dev/cu.usbmodem1101"
+# Auto-detect serial device
+def find_serial_device():
+  """Find the first matching USB modem device."""
+  devices = glob.glob("/dev/cu.usbmodem*")
+  if devices:
+    return devices[0]
+  return "/dev/cu.usbmodem1101"  # Fallback default
+
+SERIAL_DEVICE = find_serial_device()
 SERIAL_BAUD = 115200
 
 sdcard_path = os.environ.get("SDCARD_PATH", "./.sdcard")

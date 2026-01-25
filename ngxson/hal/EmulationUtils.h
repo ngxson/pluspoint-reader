@@ -24,6 +24,13 @@ static const char* CMD_BUTTON   = "BUTTON";   // arg0: action ("read") -- return
 std::string base64_encode(const char* buf, unsigned int bufLen);
 std::vector<uint8_t> base64_decode(const char* encoded_string, unsigned int in_len);
 
+// IMPORTANT: Must use lock to ensure only one EmulationUtils operation is active at a time
+class Lock {
+public:
+  Lock();
+  ~Lock();
+};
+
 static void sendCmd(const char* cmd, const char* arg0 = nullptr, const char* arg1 = nullptr, const char* arg2 = nullptr, const char* arg3 = nullptr) {
   if (cmd != CMD_BUTTON) {
     Serial.printf("[%lu] [EMU] Sending command: %s\n", millis(), cmd);
@@ -50,6 +57,9 @@ static void sendCmd(const char* cmd, const char* arg0 = nullptr, const char* arg
   }
   Serial.print("$$\n");
 }
+
+// used by display command (to avoid alloc overhead)
+void sendDisplayData(const char* buf, size_t bufLen);
 
 #define DEFAULT_TIMEOUT_MS 5000
 
@@ -80,11 +90,5 @@ static int64_t recvRespInt64(uint32_t timeoutMs = DEFAULT_TIMEOUT_MS) {
   String respStr = recvRespStr(timeoutMs);
   return respStr.toInt();
 }
-
-class Lock {
-public:
-  Lock();
-  ~Lock();
-};
 
 } // namespace EmulationUtils
