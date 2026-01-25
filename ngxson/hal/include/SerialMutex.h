@@ -4,6 +4,8 @@
 
 static HWCDC& UnwrappedSerial = Serial;
 
+// Wrapper around Arduino Serial to avoid race conditions with the EmulationUtils
+// When a transaction between device and host is ongoing, no other code should use Serial
 class MySerialImpl : public Print {
  public:
   void begin(unsigned long baud) {
@@ -18,4 +20,5 @@ class MySerialImpl : public Print {
   static MySerialImpl instance;
 };
 
+// monkey-patch Serial to use MySerialImpl
 #define Serial MySerialImpl::instance
