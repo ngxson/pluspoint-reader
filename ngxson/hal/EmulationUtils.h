@@ -33,6 +33,10 @@ public:
 };
 
 static void sendCmd(const char* cmd, const char* arg0 = nullptr, const char* arg1 = nullptr, const char* arg2 = nullptr, const char* arg3 = nullptr) {
+  // Drain any stale data in the RX buffer before sending command
+  while (UnwrappedSerial.available()) {
+    UnwrappedSerial.read();
+  }
   if (cmd != CMD_BUTTON) {
     UnwrappedSerial.printf("[%lu] [EMU] Sending command: %s\n", millis(), cmd);
   }
@@ -57,6 +61,7 @@ static void sendCmd(const char* cmd, const char* arg0 = nullptr, const char* arg
     UnwrappedSerial.print(arg3);
   }
   UnwrappedSerial.print("$$\n");
+  UnwrappedSerial.flush();  // Ensure command is fully transmitted before waiting for response
 }
 
 // used by display command (to avoid alloc overhead)
@@ -73,11 +78,15 @@ static String recvRespStr(uint32_t timeoutMs = DEFAULT_TIMEOUT_MS) {
       char c = UnwrappedSerial.read();
       if (c == '\n') {
         return line;
-      } else {
+      } else if (c != '\r') {  // Ignore carriage returns
         line += c;
       }
+    } else {
+      // Small yield to prevent tight spinning and allow USB CDC to process
+      delay(1);
     }
   }
+  UnwrappedSerial.printf("[%lu] [EMU] FATAL: Timeout waiting for response (received so far: %d bytes)\n", millis(), line.length());
   assert(false && "FATAL: Timeout waiting for response");
   // should never reach here
   return String();

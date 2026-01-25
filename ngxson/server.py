@@ -226,19 +226,18 @@ async def send_response(response: str):
   """Send a response back to the device via serial port."""
   global serial_port, LAST_RESPONSE_TIME
   now = time.time()
-  if now - LAST_RESPONSE_TIME < 0.005:  # 5ms
-    await asyncio.sleep(0.002)  # 2ms delay
+  if now - LAST_RESPONSE_TIME < 0.01:  # 10ms minimum between responses
+    await asyncio.sleep(0.005)  # 5ms delay
   LAST_RESPONSE_TIME = time.time()
-  global serial_port
   if serial_port and serial_port.is_open:
     data = (response + "\n").encode()
-    chunk_size = 128
+    chunk_size = 64  # Smaller chunks to avoid buffer overflow
     for i in range(0, len(data), chunk_size):
       chunk = data[i:i + chunk_size]
       serial_port.write(chunk)
       serial_port.flush()
       if i + chunk_size < len(data):
-        await asyncio.sleep(0.001)  # 1ms delay between chunks
+        await asyncio.sleep(0.002)  # 2ms delay between chunks
 
 
 LAST_DISPLAY_BUFFER = None
