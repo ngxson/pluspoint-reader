@@ -19,7 +19,7 @@ This fork provides a semi-emulated solution that allows running CrossPoint / Plu
 
 Why don't we use QEMU? Please refer to [this discussion](https://github.com/crosspoint-reader/crosspoint-reader/pull/500)
 
-<img width="1252" height="839" alt="Image" src="https://github.com/user-attachments/assets/e305463d-6cc0-472c-bed3-2544890a59b2" />
+<img width="1544" height="931" alt="Image" src="https://github.com/user-attachments/assets/9e9deee2-2b27-4490-8c6e-43bca2e13bb4" />
 
 The SD card is replaced by a "proxy FS", which maps the SD card to `{project_directory}/.sdcard`. It make things much, much easier to debug.
 
@@ -28,3 +28,17 @@ Because we are using the same chip as the real device, most hardware functionali
 Some small caveats:
 - `OMIT_FONTS` must be enabled, in order to fit the program inside 4MB flash
 - You have to press RST to wake up from sleep, this is not exactly the same as power button, but works for now
+
+**How to use it:**
+1. Make sure you're having a ESP32C3 with 4MB of memory. Just a standalone board is enough, no need to connect any GPIO pins
+2. Connect ESP32C3 to computer via USB
+3. Compile this project with the `env:emulated` config and flash it to the board
+4. Run `python ./ngxson/server.py`
+5. Open http://localhost:8090/ on your browser
+6. Enjoy
+
+Note: You don't need to stop the program each time you upload a new firmware, the script automatically disconnects from the console to avoid interrupting the uploading process. After it's finished, you can simply press the RST button on the board and wait ~5 seconds.
+
+Known issue(s):
+- For now, the `FATAL: Timeout waiting for response` can sometimes pop up. If it stucks in bootloop, exit the python script, press RST on the board, then re-connect it.
+- Sometimes, too frequent FS_READ and FS_WRITE can also trigger the issue above. If it when into bootloop, try deleting content inside `{project_directory}/.sdcard/.crosspoint`

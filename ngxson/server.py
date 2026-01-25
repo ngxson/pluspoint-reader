@@ -15,6 +15,7 @@ import websockets
 from websockets.http11 import Response
 from websockets.server import WebSocketServerProtocol
 import glob
+import time
 
 
 # Serial port
@@ -220,12 +221,24 @@ def parse_command(message: str) -> tuple[str, list[str]] | None:
   return (command, args)
 
 
+LAST_RESPONSE_TIME = 0
 async def send_response(response: str):
   """Send a response back to the device via serial port."""
+  global serial_port, LAST_RESPONSE_TIME
+  now = time.time()
+  if now - LAST_RESPONSE_TIME < 0.005:  # 5ms
+    await asyncio.sleep(0.002)  # 2ms delay
+  LAST_RESPONSE_TIME = time.time()
   global serial_port
   if serial_port and serial_port.is_open:
-    serial_port.write((response + "\n").encode())
-    serial_port.flush()
+    data = (response + "\n").encode()
+    chunk_size = 128
+    for i in range(0, len(data), chunk_size):
+      chunk = data[i:i + chunk_size]
+      serial_port.write(chunk)
+      serial_port.flush()
+      if i + chunk_size < len(data):
+        await asyncio.sleep(0.001)  # 1ms delay between chunks
 
 
 LAST_DISPLAY_BUFFER = None

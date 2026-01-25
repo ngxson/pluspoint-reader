@@ -62,11 +62,12 @@ static void sendCmd(const char* cmd, const char* arg0 = nullptr, const char* arg
 // used by display command (to avoid alloc overhead)
 void sendDisplayData(const char* buf, size_t bufLen);
 
-#define DEFAULT_TIMEOUT_MS 5000
+#define DEFAULT_TIMEOUT_MS 10000
 
 static String recvRespStr(uint32_t timeoutMs = DEFAULT_TIMEOUT_MS) {
   unsigned long startMillis = millis();
   String line;
+  line.reserve(1024);
   while (millis() - startMillis < (unsigned long)timeoutMs) {
     if (UnwrappedSerial.available()) {
       char c = UnwrappedSerial.read();
@@ -77,8 +78,8 @@ static String recvRespStr(uint32_t timeoutMs = DEFAULT_TIMEOUT_MS) {
       }
     }
   }
+  assert(false && "FATAL: Timeout waiting for response");
   // should never reach here
-  UnwrappedSerial.println("FATAL: Timeout waiting for response");
   return String();
 }
 

@@ -85,7 +85,9 @@ uint8_t InputManager::getState() {
   EmulationUtils::Lock lock;
   EmulationUtils::sendCmd(EmulationUtils::CMD_BUTTON, "read");
   auto res = EmulationUtils::recvRespInt64();
-  assert(res >= 0);
+  if (res < 0) {
+    return 0;  // Return no buttons pressed on error/timeout
+  }
   return static_cast<uint8_t>(res);
 #endif
 }
