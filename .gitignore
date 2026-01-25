@@ -7,3 +7,4 @@ lib/EpdFont/fontsrc
 build
 **/__pycache__/
 .sdcard
+*.log
