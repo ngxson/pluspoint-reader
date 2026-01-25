@@ -15,7 +15,9 @@ Things that this fork is set out to support:
 
 ## Emulated
 
-This fork provides a semi-emulated implementation that allows running CrossPoint / PlusPoint on a barebone, cheap ESP32C3. This allow faster development without the risk of (soft) bricking the real device.
+This fork provides a semi-emulated solution that allows running CrossPoint / PlusPoint on a cheap barebone ESP32C3. This allow faster development without the risk of (soft) bricking the real device.
+
+Why don't we use QEMU? Please refer to [this discussion](https://github.com/crosspoint-reader/crosspoint-reader/pull/500)
 
 <img width="1252" height="839" alt="Image" src="https://github.com/user-attachments/assets/e305463d-6cc0-472c-bed3-2544890a59b2" />
 

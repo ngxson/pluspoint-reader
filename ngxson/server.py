@@ -30,6 +30,9 @@ def find_serial_device():
 SERIAL_DEVICE = find_serial_device()
 SERIAL_BAUD = 115200
 
+# DFU mode detection - set when we see the bootloader log message
+is_in_dfu_mode = False
+
 sdcard_path = os.environ.get("SDCARD_PATH", "./.sdcard")
 
 
@@ -310,6 +313,8 @@ async def handle_command(command: str, args: list[str]) -> bool:
         raise ValueError("Only read action is supported")
       # no log (too frequent)
       # print(f"[Emulator] BUTTON command received: {action}", flush=True)
+      if BUTTON_STATE < 0:
+        BUTTON_STATE = 0 # small hack
       await send_response(str(BUTTON_STATE))
       return True
 
@@ -355,7 +360,7 @@ async def broadcast_message(msg_type: str, data: str):
 
 async def read_serial():
   """Read from the serial port line by line and broadcast to clients."""
-  global serial_port
+  global serial_port, is_in_dfu_mode
   buffer = b""
   loop = asyncio.get_event_loop()
 
@@ -376,6 +381,16 @@ async def read_serial():
           decoded_line = line.decode("utf-8", errors="replace").rstrip('\r')
         except Exception:
           decoded_line = line.decode("latin-1", errors="replace").rstrip('\r')
+
+        # Check for DFU/bootloader mode log message
+        if "waiting for download" in decoded_line or "DOWNLOAD(USB/UART" in decoded_line:
+          is_in_dfu_mode = True
+          print(f"[DFU] Detected bootloader mode, releasing serial port for firmware upload...", flush=True)
+          await broadcast_message("info", "Device entering DFU mode, releasing port for firmware upload...")
+          # Close the serial port immediately to let esptool take over
+          if serial_port and serial_port.is_open:
+            serial_port.close()
+          return  # Exit read_serial to release the port
 
         # Check if this is a command that needs handling
         parsed = parse_command(decoded_line)
@@ -415,25 +430,96 @@ async def read_serial():
     await broadcast_message("stdout", decoded_line)
 
 
+RETRY_INTERVAL = 2  # seconds
+DFU_WAIT_INTERVAL = 1  # seconds - interval to wait during DFU mode
+
+async def wait_for_dfu_complete():
+  """Wait for device to finish firmware upload and reconnect."""
+  global is_in_dfu_mode
+  
+  print("[DFU] Waiting for firmware upload to complete...", flush=True)
+  await broadcast_message("info", "Waiting for firmware upload to complete...")
+  
+  # Wait for the device to disconnect (esptool resets it after upload)
+  # and then reconnect
+  max_wait = 60  # seconds - firmware upload can take a while
+  waited = 0
+  device_was_gone = False
+  
+  while waited < max_wait:
+    await asyncio.sleep(DFU_WAIT_INTERVAL)
+    waited += DFU_WAIT_INTERVAL
+    
+    devices = glob.glob("/dev/cu.usbmodem*")
+    
+    if not devices:
+      device_was_gone = True
+      # Device disconnected, this is expected during/after upload
+      continue
+    
+    if device_was_gone and devices:
+      # Device came back after being gone - upload is complete
+      print(f"[DFU] Device reconnected after firmware upload", flush=True)
+      await broadcast_message("info", "Device reconnected after firmware upload")
+      # Give it time to boot up
+      await asyncio.sleep(2)
+      is_in_dfu_mode = False
+      return
+  
+  print("[DFU] Timeout waiting for device, will retry anyway...", flush=True)
+  is_in_dfu_mode = False
+
 async def open_serial():
-  """Open the serial port and read from it."""
-  global serial_port
+  """Open the serial port and read from it. Retries every RETRY_INTERVAL seconds if disconnected."""
+  global serial_port, SERIAL_DEVICE, is_in_dfu_mode
 
-  print(f"Opening serial port {SERIAL_DEVICE} at {SERIAL_BAUD} baud...", flush=True)
+  while True:
+    # If we detected DFU mode, wait for upload to complete
+    if is_in_dfu_mode:
+      await wait_for_dfu_complete()
+      continue
+    
+    # Re-detect serial device on each attempt
+    SERIAL_DEVICE = find_serial_device()
+    
+    # Check if device exists
+    if not SERIAL_DEVICE or not glob.glob("/dev/cu.usbmodem*"):
+      print("No serial device found, waiting...", flush=True)
+      await asyncio.sleep(RETRY_INTERVAL)
+      continue
+    
+    print(f"Opening serial port {SERIAL_DEVICE} at {SERIAL_BAUD} baud...", flush=True)
 
-  try:
-    serial_port = serial.Serial(SERIAL_DEVICE, SERIAL_BAUD, timeout=0.1)
-    print(f"Serial port opened successfully", flush=True)
+    try:
+      serial_port = serial.Serial(SERIAL_DEVICE, SERIAL_BAUD, timeout=0.1)
+      print(f"Serial port opened successfully", flush=True)
 
-    # Read from serial port
-    await read_serial()
+      # Read from serial port (this blocks until disconnected or DFU detected)
+      await read_serial()
 
-  except serial.SerialException as e:
-    print(f"Error opening serial port: {e}", file=sys.stderr)
-    await broadcast_message("stderr", f"Error opening serial port: {e}")
-  except Exception as e:
-    print(f"Error: {e}", file=sys.stderr)
-    await broadcast_message("stderr", f"Error: {e}")
+      # If we exited due to DFU mode, don't print connection lost message
+      if is_in_dfu_mode:
+        continue
+      
+      print(f"Serial connection lost, will retry in {RETRY_INTERVAL} seconds...", flush=True)
+      await broadcast_message("stderr", f"Serial connection lost, retrying in {RETRY_INTERVAL} seconds...")
+
+    except serial.SerialException as e:
+      if is_in_dfu_mode:
+        continue
+      print(f"Error opening serial port: {e}", file=sys.stderr)
+      await broadcast_message("stderr", f"Error opening serial port: {e}. Retrying in {RETRY_INTERVAL} seconds...")
+    except Exception as e:
+      print(f"Error: {e}", file=sys.stderr)
+      await broadcast_message("stderr", f"Error: {e}. Retrying in {RETRY_INTERVAL} seconds...")
+    finally:
+      # Close the port if it's open (unless already closed for DFU)
+      if serial_port and serial_port.is_open:
+        serial_port.close()
+        serial_port = None
+
+    if not is_in_dfu_mode:
+      await asyncio.sleep(RETRY_INTERVAL)
 
 
 async def websocket_handler(websocket: WebSocketServerProtocol):
