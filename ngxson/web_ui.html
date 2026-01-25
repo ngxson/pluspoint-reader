@@ -121,7 +121,10 @@
       line.className = type;
       line.textContent = message;
       output.appendChild(line);
-      output.scrollTop = output.scrollHeight; // TODO: only scroll if already at bottom
+      const isNearBottom = output.scrollHeight - output.scrollTop - output.clientHeight < 50;
+      if (isNearBottom) {
+        output.scrollTop = output.scrollHeight;
+      }
       while (output.childElementCount > MAX_LOG_LINES) {
         output.removeChild(output.firstChild);
       }

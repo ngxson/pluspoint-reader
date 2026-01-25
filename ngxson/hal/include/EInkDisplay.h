@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <real/HalRealImpl.h>
+#include <SerialMutex.h>
 
 class EInkDisplay {
  public:

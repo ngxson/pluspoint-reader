@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <real/HalRealImpl.h>
+#include <SerialMutex.h>
 
 #ifdef EMULATED
 typedef int oflag_t;

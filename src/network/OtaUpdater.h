@@ -3,6 +3,8 @@
 #include <functional>
 #include <string>
 
+#include <SerialMutex.h>
+
 class OtaUpdater {
   bool updateAvailable = false;
   std::string latestVersion;

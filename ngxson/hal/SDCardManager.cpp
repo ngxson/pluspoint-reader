@@ -68,11 +68,11 @@ bool SDCardManager::readFileToStream(const char* path, Print& out, size_t chunkS
   EmulationUtils::Lock lock;
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
-    Serial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
     return false;
   }
   if (size == -2) {
-    Serial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
     return false;
   }
   size_t bytesRead = 0;
@@ -95,11 +95,11 @@ size_t SDCardManager::readFileToBuffer(const char* path, char* buffer, size_t bu
   EmulationUtils::Lock lock;
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
-    Serial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
     return 0;
   }
   if (size == -2) {
-    Serial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
     return 0;
   }
   size_t toRead = static_cast<size_t>(size);
@@ -205,11 +205,11 @@ bool SDCardManager::openFileForRead(const char* moduleName, const char* path, Fs
   Serial.printf("[%lu] [FS ] Emulated openFileForRead: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
-    Serial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FS ] File not found: %s\n", millis(), path);
     return false;
   }
   if (size == -2) {
-    Serial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
     return false;
   }
   file = FsFile(path, O_RDONLY);
@@ -232,9 +232,9 @@ bool SDCardManager::openFileForWrite(const char* moduleName, const char* path, F
   Serial.printf("[%lu] [FS ] Emulated openFileForWrite: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
-    Serial.printf("[%lu] [FS ] File does not exist and will be created\n", millis());
+    UnwrappedSerial.printf("[%lu] [FS ] File does not exist and will be created\n", millis());
   } else if (size == -2) {
-    Serial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FS ] Path is a directory, not a file: %s\n", millis(), path);
     return false;
   }
   file = FsFile(path, O_WRONLY | O_CREAT);
@@ -271,15 +271,15 @@ FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
   auto size = getFileSizeEmulated(path);
   if (size == -1) {
     if (oflag & O_CREAT) {
-      Serial.printf("[%lu] [FSF] File does not exist, will be created: %s\n", millis(), path);
+      UnwrappedSerial.printf("[%lu] [FSF] File does not exist, will be created: %s\n", millis(), path);
       open = true;
       fileSizeBytes = 0;
     } else {
-      Serial.printf("[%lu] [FSF] File not found: %s\n", millis(), path);
+      UnwrappedSerial.printf("[%lu] [FSF] File not found: %s\n", millis(), path);
       open = false;
     }
   } else if (size == -2) {
-    Serial.printf("[%lu] [FSF] Path is a directory: %s\n", millis(), path);
+    UnwrappedSerial.printf("[%lu] [FSF] Path is a directory: %s\n", millis(), path);
     open = true;
     isDir = true;
     // get directory entries
@@ -293,11 +293,11 @@ FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
       }
       dirEntries.push_back(resp);
     }
-    Serial.printf("[%lu] [FSF] Directory has %u entries\n", millis(), (unsigned)dirEntries.size());
+    UnwrappedSerial.printf("[%lu] [FSF] Directory has %u entries\n", millis(), (unsigned)dirEntries.size());
     dirIndex = 0;
     fileSizeBytes = 0;
   } else {
-    Serial.printf("[%lu] [FSF] File opened, size: %lld bytes: %s\n", millis(), size, path);
+    UnwrappedSerial.printf("[%lu] [FSF] File opened, size: %lld bytes: %s\n", millis(), size, path);
     open = true;
     fileSizeBytes = static_cast<size_t>(size);
   }

@@ -1,21 +1,36 @@
 #include <Arduino.h>
 #include <vector>
 #include <EmulationUtils.h>
+#include <SerialMutex.h>
 
-namespace EmulationUtils {
 
 static SemaphoreHandle_t emuMutex = xSemaphoreCreateMutex();
 
-// TODO: using mutex does work for now, but there is nothing preventing a task to use Serial directly while EmulationUtils is in use.
-// A more robust solution would be to have a Serial wrapper that enforces mutual exclusion.
+MySerialImpl MySerialImpl::instance;
+size_t MySerialImpl::write(uint8_t b) {
+  EmulationUtils::Lock lock;
+  return UnwrappedSerial.write(b);
+}
+size_t MySerialImpl::write(const uint8_t* buffer, size_t size) {
+  EmulationUtils::Lock lock;
+  return UnwrappedSerial.write(buffer, size);
+}
+void MySerialImpl::flush() {
+  EmulationUtils::Lock lock;
+  UnwrappedSerial.flush();
+}
+
+
+
+namespace EmulationUtils {
 
 Lock::Lock() {
-  // Serial.printf("[%lu] [EMU] Acquiring lock\n", millis());
   xSemaphoreTake(emuMutex, portMAX_DELAY);
+  // UnwrappedSerial.printf("[%lu] [EMU] Acquired lock\n", millis());
 }
 
 Lock::~Lock() {
-  // Serial.printf("[%lu] [EMU] Releasing lock\n", millis());
+  // UnwrappedSerial.printf("[%lu] [EMU] Releasing lock\n", millis());
   xSemaphoreGive(emuMutex);
 }
 
@@ -125,9 +140,9 @@ std::vector<uint8_t> base64_decode(const char* encoded_string, unsigned int in_l
 
 
 void sendDisplayData(const char* buf, size_t bufLen) {
-  Serial.print("$$CMD_");
-  Serial.print(CMD_DISPLAY);
-  Serial.print(":");
+  UnwrappedSerial.print("$$CMD_");
+  UnwrappedSerial.print(CMD_DISPLAY);
+  UnwrappedSerial.print(":");
 
   int i = 0;
   int j = 0;
@@ -142,7 +157,7 @@ void sendDisplayData(const char* buf, size_t bufLen) {
       bufChar.push_back(c);
     }
     if (bufChar.size() == SEND_EVERY || c == '\0') {
-      Serial.write(bufChar.data(), bufChar.size());
+      UnwrappedSerial.write(bufChar.data(), bufChar.size());
       bufChar.clear();
     }
   };
@@ -183,7 +198,8 @@ void sendDisplayData(const char* buf, size_t bufLen) {
 
   sendChar('\0'); // flush remaining
 
-  Serial.print("$$\n");
+  UnwrappedSerial.print("$$\n");
 }
+
 
 } // namespace EmulationUtils

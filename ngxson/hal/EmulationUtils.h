@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <vector>
+#include <SerialMutex.h>
 
 namespace EmulationUtils {
 
@@ -33,29 +34,29 @@ public:
 
 static void sendCmd(const char* cmd, const char* arg0 = nullptr, const char* arg1 = nullptr, const char* arg2 = nullptr, const char* arg3 = nullptr) {
   if (cmd != CMD_BUTTON) {
-    Serial.printf("[%lu] [EMU] Sending command: %s\n", millis(), cmd);
+    UnwrappedSerial.printf("[%lu] [EMU] Sending command: %s\n", millis(), cmd);
   }
-  Serial.print("$$CMD_");
-  Serial.print(cmd);
+  UnwrappedSerial.print("$$CMD_");
+  UnwrappedSerial.print(cmd);
   if (arg0 != nullptr) {
-    Serial.print(":");
-    Serial.print(arg0);
+    UnwrappedSerial.print(":");
+    UnwrappedSerial.print(arg0);
   } else {
-    Serial.print(":"); // ensure at least one colon
+    UnwrappedSerial.print(":"); // ensure at least one colon
   }
   if (arg1 != nullptr) {
-    Serial.print(":");
-    Serial.print(arg1);
+    UnwrappedSerial.print(":");
+    UnwrappedSerial.print(arg1);
   }
   if (arg2 != nullptr) {
-    Serial.print(":");
-    Serial.print(arg2);
+    UnwrappedSerial.print(":");
+    UnwrappedSerial.print(arg2);
   }
   if (arg3 != nullptr) {
-    Serial.print(":");
-    Serial.print(arg3);
+    UnwrappedSerial.print(":");
+    UnwrappedSerial.print(arg3);
   }
-  Serial.print("$$\n");
+  UnwrappedSerial.print("$$\n");
 }
 
 // used by display command (to avoid alloc overhead)
@@ -67,8 +68,8 @@ static String recvRespStr(uint32_t timeoutMs = DEFAULT_TIMEOUT_MS) {
   unsigned long startMillis = millis();
   String line;
   while (millis() - startMillis < (unsigned long)timeoutMs) {
-    if (Serial.available()) {
-      char c = Serial.read();
+    if (UnwrappedSerial.available()) {
+      char c = UnwrappedSerial.read();
       if (c == '\n') {
         return line;
       } else {
@@ -77,7 +78,7 @@ static String recvRespStr(uint32_t timeoutMs = DEFAULT_TIMEOUT_MS) {
     }
   }
   // should never reach here
-  Serial.println("FATAL: Timeout waiting for response");
+  UnwrappedSerial.println("FATAL: Timeout waiting for response");
   return String();
 }
 

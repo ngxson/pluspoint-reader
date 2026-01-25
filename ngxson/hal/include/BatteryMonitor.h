@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <real/HalRealImpl.h>
+#include <SerialMutex.h>
 
 class BatteryMonitor {
 public:

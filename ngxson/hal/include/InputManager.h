@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <SerialMutex.h>
 
 class InputManager {
  public:

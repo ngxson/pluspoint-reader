@@ -1,6 +1,7 @@
 #pragma once
 
 #include <HardwareSerial.h>
+#include <SerialMutex.h>
 
 #include <string>
 #include <utility>
