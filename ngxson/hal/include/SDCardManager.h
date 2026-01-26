@@ -29,7 +29,7 @@ class FsFile : public Print {
 
   void flush() { /* no-op */ }
   size_t getName(char* name, size_t len) {
-    String n = path;
+    String n = this->name;
     if (n.length() >= len) {
       n = n.substring(0, len - 1);
     }
@@ -61,7 +61,8 @@ class FsFile : public Print {
     if (!isDir || dirIndex >= dirEntries.size()) {
       return FsFile();
     }
-    FsFile f(dirEntries[dirIndex].c_str(), O_RDONLY);
+    String fullPath = path + "/" + dirEntries[dirIndex];
+    FsFile f(fullPath.c_str(), O_RDONLY);
     dirIndex++;
     return f;
   }

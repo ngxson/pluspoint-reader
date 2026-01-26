@@ -11,7 +11,8 @@ Philosophical design behind this fork:
 
 Things that this fork is set out to support:
 - [x] Emulation (for a better DX)
-- [ ] Allow runtime app, similar to a Flipper Zero (TBD how to do it)
+- [x] Allow user-defined app, packaged as Javascript file under `/apps` directory
+- [ ] Real-time clock (with calibration to minimize drifting)
 
 ## Emulated
 
@@ -42,3 +43,36 @@ Note: You don't need to stop the program each time you upload a new firmware, th
 Known issue(s):
 - For now, the `FATAL: Timeout waiting for response` can sometimes pop up. If it stucks in bootloop, exit the python script, press RST on the board, then re-connect it.
 - Sometimes, too frequent FS_READ and FS_WRITE can also trigger the issue above. If it when into bootloop, try deleting content inside `{project_directory}/.sdcard/.crosspoint`
+
+## Custom JS apps
+
+We have an experimental version of user-defined JS apps (built upon [cesanta/elk](https://github.com/cesanta/elk)). Only a subset of JS syntax is supported.
+
+TODO: more details on this
+
+Example application:
+
+```js
+let count = 0;
+let last_ms = 0;
+
+while (true) {
+  let now_ms = millis();
+  if (now_ms - last_ms >= 1000) {
+    last_ms = now_ms;
+    count += 1;
+    clearScreen(false); // true = black, false = white
+    drawCenteredText("UI_12", pageHeight / 2, "Hello World!", true, "BOLD");
+    drawCenteredText("UI_12", pageHeight / 2 + 30, "count = " + toString(count), true, "REGULAR");
+    displayBuffer();
+  }
+
+  if (isButtonPressed(BTN_BACK)) {
+    break; // exit the program
+  }
+}
+```
+
+Output: The counter is updated every 1 second
+
+<img width="497" height="219" alt="Image" src="https://github.com/user-attachments/assets/42d51278-ba14-4f48-9e9e-cc31f76fba4c" />

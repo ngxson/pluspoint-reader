@@ -7,6 +7,8 @@
 #include <SPI.h>
 #include <builtinFonts/all.h>
 
+#include "app/AppActivity.h"
+
 #include <cstring>
 
 #include "Battery.h"
@@ -251,6 +253,12 @@ void onGoHome() {
   enterNewActivity(new HomeActivity(renderer, mappedInputManager, onContinueReading, onGoToMyLibrary, onGoToSettings,
                                     onGoToFileTransfer, onGoToBrowser));
 }
+
+// @ngxson [CUSTOM_APP]
+std::function<void()> onGoToApps = []() {
+  exitActivity();
+  enterNewActivity(new AppActivity(renderer, mappedInputManager, onGoHome));
+};
 
 void setupDisplayAndFonts() {
   einkDisplay.begin();

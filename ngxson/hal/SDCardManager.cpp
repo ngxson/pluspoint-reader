@@ -266,6 +266,15 @@ bool SDCardManager::removeDir(const char* path) {
 // FsFile emulation methods
 //
 
+String nameFromPath(const String& path) {
+  int lastSlash = path.lastIndexOf('/');
+  if (lastSlash == -1) {
+    return path;
+  } else {
+    return path.substring(lastSlash + 1);
+  }
+}
+
 FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
   Serial.printf("[%lu] [FSF] Emulated FsFile open: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
@@ -282,6 +291,7 @@ FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
     UnwrappedSerial.printf("[%lu] [FSF] Path is a directory: %s\n", millis(), path);
     open = true;
     isDir = true;
+    name = nameFromPath(String(path));
     // get directory entries
     EmulationUtils::Lock lock;
     EmulationUtils::sendCmd(EmulationUtils::CMD_FS_LIST, path);
@@ -300,6 +310,7 @@ FsFile::FsFile(const char* path, oflag_t oflag) : path(path), oflag(oflag) {
     UnwrappedSerial.printf("[%lu] [FSF] File opened, size: %lld bytes: %s\n", millis(), size, path);
     open = true;
     fileSizeBytes = static_cast<size_t>(size);
+    name = nameFromPath(String(path));
   }
 }
 

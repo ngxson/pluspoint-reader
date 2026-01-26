@@ -6,6 +6,8 @@
 #include <SDCardManager.h>
 #include <Xtc.h>
 
+#include "app/AppActivity.h"
+
 #include <cstring>
 #include <vector>
 
@@ -26,6 +28,7 @@ int HomeActivity::getMenuItemCount() const {
   int count = 3;  // My Library, File transfer, Settings
   if (hasContinueReading) count++;
   if (hasOpdsUrl) count++;
+  count++; // @ngxson [CUSTOM_APP]
   return count;
 }
 
@@ -170,9 +173,16 @@ void HomeActivity::loop() {
     int idx = 0;
     const int continueIdx = hasContinueReading ? idx++ : -1;
     const int myLibraryIdx = idx++;
+    const int appActivityIdx = idx++; // @ngxson [CUSTOM_APP]
     const int opdsLibraryIdx = hasOpdsUrl ? idx++ : -1;
     const int fileTransferIdx = idx++;
     const int settingsIdx = idx;
+
+    // @ngxson [CUSTOM_APP]
+    if (selectorIndex == appActivityIdx) {
+      onGoToApps();
+      return;
+    }
 
     if (selectorIndex == continueIdx) {
       onContinueReading();
@@ -505,6 +515,9 @@ void HomeActivity::render() {
     // Insert Calibre Library after My Library
     menuItems.insert(menuItems.begin() + 1, "Calibre Library");
   }
+
+  // @ngxson [CUSTOM_APP]
+  menuItems.insert(menuItems.begin() + 1, "Applications");
 
   const int menuTileWidth = pageWidth - 2 * margin;
   constexpr int menuTileHeight = 45;
