@@ -74,6 +74,9 @@ void HomeActivity::onEnter() {
         if (!xtc.getTitle().empty()) {
           lastBookTitle = std::string(xtc.getTitle());
         }
+        if (!xtc.getAuthor().empty()) {
+          lastBookAuthor = std::string(xtc.getAuthor());
+        }
         // Try to generate thumbnail image for Continue Reading card
         if (xtc.generateThumbBmp()) {
           coverBmpPath = xtc.getThumbBmpPath();
@@ -512,8 +515,8 @@ void HomeActivity::render() {
   // Build menu items dynamically
   std::vector<const char*> menuItems = {"My Library", "File Transfer", "Settings"};
   if (hasOpdsUrl) {
-    // Insert Calibre Library after My Library
-    menuItems.insert(menuItems.begin() + 1, "Calibre Library");
+    // Insert OPDS Browser after My Library
+    menuItems.insert(menuItems.begin() + 1, "OPDS Browser");
   }
 
   // @ngxson [CUSTOM_APP]

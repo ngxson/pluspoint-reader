@@ -4,7 +4,10 @@
 .vscode
 lib/EpdFont/fontsrc
 *.generated.h
+.vs
 build
 **/__pycache__/
 .sdcard
 *.log
+/compile_commands.json
+/.cache
