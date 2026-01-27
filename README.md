@@ -12,6 +12,9 @@ Philosophical design behind this fork:
 Things that this fork is set out to support:
 - [x] Emulation (for a better DX)
 - [x] Allow user-defined app, packaged as Javascript file under `/apps` directory
+    - [ ] Cover more APIs
+    - [ ] Allow app to be compressed into a more space-efficient format (inspired by BSON <--> JSON)
+- [ ] Allow custom fonts to be installed to SPIFFS partition
 - [ ] Real-time clock (with calibration to minimize drifting)
 
 ## Emulated
@@ -47,6 +50,8 @@ Known issue(s):
 ## Custom JS apps
 
 We have an experimental version of user-defined JS apps (built upon [cesanta/elk](https://github.com/cesanta/elk)). Only a subset of JS syntax is supported.
+
+Applications can be loaded onto SD card `/app` folder, requires to name the file with `.js` extension.
 
 TODO: more details on this
 
