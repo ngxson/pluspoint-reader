@@ -1,7 +1,7 @@
 #include <HalGPIO.h>
 #include <SPI.h>
 #include <esp_sleep.h>
-
+/*
 void HalGPIO::begin() {
   inputMgr.begin();
   SPI.begin(EPD_SCLK, SPI_MISO, EPD_MOSI, EPD_CS);
@@ -53,3 +53,4 @@ bool HalGPIO::isWakeupByPowerButton() const {
     return (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED) && (resetReason == ESP_RST_POWERON);
   }
 }
+*/

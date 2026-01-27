@@ -10,7 +10,14 @@ bool SDCardManager::begin() {
 #ifndef EMULATED
   return SdMan.begin();
 #else
-  // no-op
+  // wait for emulation to be ready
+  int64_t res = 0;
+  while (res != 123456) {
+    EmulationUtils::Lock lock;
+    EmulationUtils::sendCmd(EmulationUtils::CMD_PING, "dummy");
+    res = EmulationUtils::recvRespInt64(500);
+  }
+
   return true;
 #endif
 }

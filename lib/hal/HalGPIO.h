@@ -1,8 +1,10 @@
 #pragma once
 
 #include <Arduino.h>
+#ifndef EMULATED
 #include <BatteryMonitor.h>
 #include <InputManager.h>
+#endif
 
 // Display SPI pins (custom pins for XteinkX4, not hardware SPI defaults)
 #define EPD_SCLK 8   // SPI Clock
@@ -19,7 +21,7 @@
 #define UART0_RXD 20  // Used for USB connection detection
 
 class HalGPIO {
-#if CROSSPOINT_EMULATED == 0
+#ifndef EMULATED
   InputManager inputMgr;
 #endif
 

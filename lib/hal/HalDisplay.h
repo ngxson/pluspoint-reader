@@ -48,5 +48,7 @@ class HalDisplay {
   void displayGrayBuffer();
 
  private:
+#ifndef EMULATED
   EInkDisplay einkDisplay;
+#endif
 };

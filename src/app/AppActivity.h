@@ -1,10 +1,10 @@
 #pragma once
-#include <EInkDisplay.h>
 #include <EpdFontFamily.h>
 
 #include <string>
 #include <utility>
 #include <functional>
+#include <vector>
 #include <elk.h>
 
 #include "../activities/Activity.h"
