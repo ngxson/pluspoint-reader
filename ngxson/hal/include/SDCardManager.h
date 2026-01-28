@@ -61,7 +61,7 @@ class FsFile : public Print {
     if (!isDir || dirIndex >= dirEntries.size()) {
       return FsFile();
     }
-    String fullPath = path + "/" + dirEntries[dirIndex];
+    String fullPath = path + (path == "/" ? "" : "/") + dirEntries[dirIndex];
     FsFile f(fullPath.c_str(), O_RDONLY);
     dirIndex++;
     return f;
