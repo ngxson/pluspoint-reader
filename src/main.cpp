@@ -254,15 +254,24 @@ std::function<void()> onGoToApps = []() {
 
 // @ngxson [CUSTOM_FONT]
 #include <FsSimple.h>
+#include <EpdFontCustom.h>
 FsSimple resources;
+EpdFontCustom customFont;
+
+// @ngxson [CUSTOM_FONT]
 void maybeFlashResources() {
-  FsFile file = SdMan.open("/resources.bin", O_RDONLY);
+  static const char* RESOURCES_FILE = "/resources.bin";
+  FsFile file = SdMan.open(RESOURCES_FILE, O_RDONLY);
   if (!file) {
     Serial.printf("[%lu] [   ] No custom resources to flash\n", millis());
     return;
   }
   const size_t fileSize = file.size();
   Serial.printf("[%lu] [   ] Flashing custom resources (%u bytes)\n", millis(), fileSize);
+
+  if (!resources.erase()) {
+    return; // failed
+  }
 
   static constexpr size_t CHUNK_SIZE = 4096;
   uint8_t buffer[CHUNK_SIZE];
@@ -271,18 +280,25 @@ void maybeFlashResources() {
     size_t toRead = std::min(CHUNK_SIZE, fileSize - bytesFlashed);
     int bytesRead = file.read(buffer, toRead);
     if (bytesRead <= 0) {
-      Serial.printf("[%lu] [   ] Error reading resources file to flash\n", millis());
+      Serial.printf("[%lu] [   ] Error reading resources file\n", millis());
       return;
     }
     auto ok = resources.write(bytesFlashed, buffer, bytesRead);
     if (!ok) {
-      Serial.printf("[%lu] [   ] Error flashing resources at offset %u\n", millis(), bytesFlashed);
+      Serial.printf("[%lu] [   ] Error flashing resources\n", millis());
       return;
     }
     bytesFlashed += bytesRead;
   }
   Serial.printf("[%lu] [   ] Finished flashing custom resources\n", millis());
+  SdMan.remove(RESOURCES_FILE); // remove the file after flashing
   file.close();
+
+  // attempt to remount
+  if (!resources.begin(true)) {
+    Serial.printf("[%lu] [   ] Error mounting flashed resources\n", millis());
+    return;
+  }
 }
 
 
@@ -290,6 +306,17 @@ void maybeFlashResources() {
 void setupDisplayAndFonts() {
   display.begin();
   Serial.printf("[%lu] [   ] Display initialized\n", millis());
+
+  // @ngxson [CUSTOM_FONT]
+  customFont.load(resources);
+  if (customFont.valid()) {
+    EpdFontFamily customFontFamily(customFont.getFont());
+    renderer.insertFont(BOOKERLY_14_FONT_ID, customFontFamily);
+  } else {
+    renderer.insertFont(BOOKERLY_14_FONT_ID, bookerly14FontFamily);
+  }
+  
+  // renderer.insertFont(BOOKERLY_14_FONT_ID, bookerly14FontFamily);
 #ifndef OMIT_FONTS
   renderer.insertFont(BOOKERLY_12_FONT_ID, bookerly12FontFamily);
   renderer.insertFont(BOOKERLY_16_FONT_ID, bookerly16FontFamily);

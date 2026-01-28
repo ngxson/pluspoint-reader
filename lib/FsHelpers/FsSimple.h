@@ -35,34 +35,52 @@ class FsSimple {
   static_assert(sizeof(Header) == 4 + MAX_FILES * sizeof(FileEntry));
   static_assert(sizeof(Header) % ALIGNMENT == 0);
 
-  size_t get_padding(size_t size) {
+  static size_t get_padding(size_t size) {
     size_t remainder = size % ALIGNMENT;
     return (remainder == 0) ? 0 : (ALIGNMENT - remainder);
   }
 
-  bool begin();
+  // returns true if mounted successfully
+  // remount should only be used after write/erase operations
+  bool begin(bool remount = false);
+
+  // returns nullptr if not mounted
   const Header* getRoot();
+
+  // always return a valid pointer; undefined behavior if entry is invalid
   const uint8_t* mmap(const FileEntry* entry);
 
   // flash writing
-  bool erase(size_t size);
+  bool erase();
   bool write(uint32_t offset, const uint8_t* data, size_t len);
 
-#ifdef FS_SIMPLE_ENABLE_WRITE
+#ifdef CREATE_RESOURCES
   // to be used by host CLI tool that creates the packed filesystem
   uint8_t writeData[MAX_ALLOC_SIZE];
   size_t writeDataSize = 0;
 
   void beginCreate() {
+    Header* header = (Header*)writeData;
+    header->magic = MAGIC;
     for (size_t i = 0; i < MAX_FILES; i++) {
-      writeHeader.entries[i].type = FILETYPE_INVALID;
-      writeHeader.entries[i].size = 0;
-      writeHeader.entries[i].name[0] = '\0';
+      header->entries[i].type = FILETYPE_INVALID;
+      header->entries[i].size = 0;
+      header->entries[i].name[0] = '\0';
     }
+    writeDataSize = sizeof(Header);
+  }
+
+  uint8_t* getWriteData() {
+    return writeData;
+  }
+
+  size_t getWriteSize() {
+    return writeDataSize;
   }
 
   // return error message or nullptr if successful
-  const char* addFile(Header& header, const FileEntry& entry, const uint8_t* data) {
+  const char* addFileEntry(const FileEntry& entry, const uint8_t* data) {
+    Header* header = (Header*)writeData;
     if (entry.size % ALIGNMENT != 0) {
       return "File size must be multiple of alignment";
     }
@@ -74,8 +92,8 @@ class FsSimple {
     }
     // find empty slot
     for (size_t i = 0; i < MAX_FILES; i++) {
-      if (header.entries[i].type == FILETYPE_INVALID) {
-        header.entries[i] = entry;
+      if (header->entries[i].type == FILETYPE_INVALID) {
+        header->entries[i] = entry;
         // copy data
         size_t offset = writeDataSize;
         for (size_t j = 0; j < entry.size; j++) {
@@ -83,7 +101,7 @@ class FsSimple {
         }
         writeDataSize += entry.size; // (no need padding here as size is already aligned)
         return nullptr; // success
-      } else if (strncmp(header.entries[i].name, entry.name, MAX_FILE_NAME_LENGTH) == 0) {
+      } else if (strncmp(header->entries[i].name, entry.name, MAX_FILE_NAME_LENGTH) == 0) {
         return "File with the same name already exists";
       }
     }

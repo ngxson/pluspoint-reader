@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include <esp_partition.h>
 #include <Arduino.h>
 #include <vector>
 
@@ -13,13 +13,19 @@ class FsSimple::Impl {
   const uint8_t* mmap_data = nullptr;
 };
 
-bool FsSimple::begin() {
-  assert(impl == nullptr && "begin called multiple times");
-  impl = new Impl();
+bool FsSimple::begin(bool remount) {
+  if (!remount) {
+    assert(impl == nullptr && "begin called multiple times");
+    impl = new Impl();
+  } else {
+    assert(impl != nullptr && "remount called before initial begin");
+  }
 
   impl->partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_SPIFFS, nullptr);
   if (!impl->partition) {
     Serial.printf("[%lu] [FSS] SPIFFS partition not found\n", millis());
+    impl->header = nullptr;
+    impl->mmap_data = nullptr;
     return false;
   }
 
@@ -29,12 +35,16 @@ bool FsSimple::begin() {
                                 (const void**)&impl->mmap_data, &map_handle);
   if (err != 0 || impl->mmap_data == nullptr) {
     Serial.printf("[%lu] [FSS] mmap failed, code: %d\n", millis(), err);
+    impl->header = nullptr;
+    impl->mmap_data = nullptr;
     return false;
   }
 
   impl->header = (const Header*)impl->mmap_data;
   if (impl->header->magic != MAGIC) {
     Serial.printf("[%lu] [FSS] Invalid magic: 0x%08X\n", millis(), impl->header->magic);
+    impl->header = nullptr;
+    impl->mmap_data = nullptr;
     return false;
   }
 
@@ -64,16 +74,16 @@ const uint8_t* FsSimple::mmap(const FsSimple::FileEntry* entry) {
   return impl->mmap_data + offset;
 }
 
-bool FsSimple::erase(size_t size) {
+bool FsSimple::erase() {
   assert(impl != nullptr);
   assert(impl->partition != nullptr);
-  assert(size <= impl->partition->size);
 
-  auto err = esp_partition_erase_range(impl->partition, 0, size);
+  auto err = esp_partition_erase_range(impl->partition, 0, impl->partition->size);
   if (err != 0) {
-    Serial.printf("[%lu] [FSS] erase failed, code: %d\n", millis(), err);
+    Serial.printf("[%lu] [FSS] erase failed, code %d\n", millis(), err);
     return false;
   }
+
   return true;
 }
 
@@ -84,7 +94,7 @@ bool FsSimple::write(uint32_t offset, const uint8_t* data, size_t len) {
 
   auto err = esp_partition_write(impl->partition, offset, data, len);
   if (err != 0) {
-    Serial.printf("[%lu] [FSS] write failed at offset %u, code: %d\n", millis(), offset, err);
+    Serial.printf("[%lu] [FSS] write failed, offset %u, len %u, code %d\n", millis(), offset, len, err);
     return false;
   }
   return true;
