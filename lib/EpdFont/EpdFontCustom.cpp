@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "EpdFontCustom.h"
 
-bool EpdFontCustom::load(FsSimple& resources) {
+bool EpdFontCustom::load(ResourcesFS& resources) {
   const auto* root = resources.getRoot();
   if (!root) {
     Serial.printf("[%lu] [FC ] Resource is not mounted, skipping\n", millis());
@@ -11,10 +11,10 @@ bool EpdFontCustom::load(FsSimple& resources) {
   }
 
   // find font file entry
-  const FsSimple::FileEntry* fontEntry = nullptr;
-  for (size_t i = 0; i < FsSimple::MAX_FILES; i++) {
+  const ResourcesFS::FileEntry* fontEntry = nullptr;
+  for (size_t i = 0; i < ResourcesFS::MAX_FILES; i++) {
     const auto& entry = root->entries[i];
-    if (entry.type == FsSimple::FILETYPE_FONT_REGULAR) {
+    if (entry.type == ResourcesFS::FILETYPE_FONT_REGULAR) {
       fontEntry = &entry;
       break;
     }

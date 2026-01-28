@@ -22,9 +22,9 @@ ADDED_CONTENT=$(cat << EOL
 #include "EpdFontCustom.h"
 
 int main() {
-  FsSimple fs;
+  ResourcesFS fs;
 
-  FsSimple::FileEntry fontEntry;
+  ResourcesFS::FileEntry fontEntry;
   std::vector<uint8_t> fontData;
 
   EpdFontCustom fontCustom;

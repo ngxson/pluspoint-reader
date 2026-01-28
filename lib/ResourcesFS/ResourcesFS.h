@@ -5,10 +5,11 @@
 #include <cstring>
 
 // Simple implementation of read-only packed filesystem
-class FsSimple {
+// Inspired by packed resources used by some STM32 smartwatch / smartband firmwares
+class ResourcesFS {
  public:
-  FsSimple() = default;
-  ~FsSimple() = default;
+  ResourcesFS() = default;
+  ~ResourcesFS() = default;
 
   static constexpr size_t MAX_FILES = 32;
   static constexpr size_t MAX_FILE_NAME_LENGTH = 32;
@@ -85,7 +86,7 @@ class FsSimple {
       return "File size must be multiple of alignment";
     }
     if (writeDataSize + entry.size > MAX_ALLOC_SIZE) {
-      return "Not enough space in FsSimple image";
+      return "Not enough space in ResourcesFS image";
     }
     if (entry.size == 0 || entry.name[0] == '\0') {
       return "Invalid file entry";

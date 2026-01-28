@@ -253,9 +253,9 @@ std::function<void()> onGoToApps = []() {
 
 
 // @ngxson [CUSTOM_FONT]
-#include <FsSimple.h>
+#include <ResourcesFS.h>
 #include <EpdFontCustom.h>
-FsSimple resources;
+ResourcesFS resources;
 EpdFontCustom customFont;
 
 // @ngxson [CUSTOM_FONT]

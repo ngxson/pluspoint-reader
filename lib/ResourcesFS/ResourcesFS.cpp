@@ -4,16 +4,16 @@
 #include <Arduino.h>
 #include <vector>
 
-#include "FsSimple.h"
+#include "ResourcesFS.h"
 
-class FsSimple::Impl {
+class ResourcesFS::Impl {
  public:
   const esp_partition_t* partition = nullptr;
   const Header* header = nullptr;
   const uint8_t* mmap_data = nullptr;
 };
 
-bool FsSimple::begin(bool remount) {
+bool ResourcesFS::begin(bool remount) {
   if (!remount) {
     assert(impl == nullptr && "begin called multiple times");
     impl = new Impl();
@@ -48,16 +48,16 @@ bool FsSimple::begin(bool remount) {
     return false;
   }
 
-  Serial.printf("[%lu] [FSS] FsSimple initialized\n", millis());
+  Serial.printf("[%lu] [FSS] ResourcesFS initialized\n", millis());
   return true;
 }
 
-const FsSimple::Header* FsSimple::getRoot() {
+const ResourcesFS::Header* ResourcesFS::getRoot() {
   assert(impl != nullptr);
   return impl->header;
 }
 
-const uint8_t* FsSimple::mmap(const FsSimple::FileEntry* entry) {
+const uint8_t* ResourcesFS::mmap(const ResourcesFS::FileEntry* entry) {
   assert(impl != nullptr);
   assert(impl->header != nullptr);
   assert(impl->mmap_data != nullptr);
@@ -74,7 +74,7 @@ const uint8_t* FsSimple::mmap(const FsSimple::FileEntry* entry) {
   return impl->mmap_data + offset;
 }
 
-bool FsSimple::erase() {
+bool ResourcesFS::erase() {
   assert(impl != nullptr);
   assert(impl->partition != nullptr);
 
@@ -87,7 +87,7 @@ bool FsSimple::erase() {
   return true;
 }
 
-bool FsSimple::write(uint32_t offset, const uint8_t* data, size_t len) {
+bool ResourcesFS::write(uint32_t offset, const uint8_t* data, size_t len) {
   assert(impl != nullptr);
   assert(impl->partition != nullptr);
   assert(offset + len <= impl->partition->size);

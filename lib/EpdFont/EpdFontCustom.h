@@ -1,6 +1,6 @@
 #pragma once
 
-#include <FsSimple.h>
+#include <ResourcesFS.h>
 #include <EpdFontData.h>
 #include <EpdFont.h>
 #ifdef CREATE_RESOURCES
@@ -23,12 +23,12 @@ class EpdFontCustom {
     uint8_t reserved[32]; // reserved for future use
   };
 
-  bool load(FsSimple& resources);
+  bool load(ResourcesFS& resources);
   bool valid() const;
   const EpdFont* getFont() const;
 
 #ifdef CREATE_RESOURCES
-  void serializeFont(FsSimple::FileEntry& outEntry, std::vector<uint8_t>& outData, const char* name,
+  void serializeFont(ResourcesFS::FileEntry& outEntry, std::vector<uint8_t>& outData, const char* name,
                      const EpdFontData* data, size_t bitmapSize, size_t glyphsSize, size_t intervalsSize) {
     // prepare header
     Header header;
@@ -56,15 +56,15 @@ class EpdFontCustom {
     outData.insert(outData.end(), (uint8_t*)data->intervals, (uint8_t*)data->intervals + intervalsSize);
     
     // add padding if necessary
-    size_t padding = FsSimple::get_padding(outData.size());
+    size_t padding = ResourcesFS::get_padding(outData.size());
     for (size_t i = 0; i < padding; i++) {
       outData.push_back(0);
     }
 
     // prepare file entry
-    outEntry.type = FsSimple::FILETYPE_FONT_REGULAR;
+    outEntry.type = ResourcesFS::FILETYPE_FONT_REGULAR;
     outEntry.size = outData.size();
-    strncpy(outEntry.name, name, FsSimple::MAX_FILE_NAME_LENGTH);
+    strncpy(outEntry.name, name, ResourcesFS::MAX_FILE_NAME_LENGTH);
   }
 #endif
 
