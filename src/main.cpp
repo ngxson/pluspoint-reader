@@ -250,6 +250,9 @@ std::function<void()> onGoToApps = []() {
   enterNewActivity(new AppActivity(renderer, mappedInputManager, onGoHome));
 };
 
+#include <CustomFont.h> // @ngxson [CUSTOM_FONTS]
+CustomFont customFont;
+
 void setupDisplayAndFonts() {
   display.begin();
   Serial.printf("[%lu] [   ] Display initialized\n", millis());
@@ -269,8 +272,16 @@ void setupDisplayAndFonts() {
   renderer.insertFont(OPENDYSLEXIC_14_FONT_ID, opendyslexic14FontFamily);
 #endif  // OMIT_FONTS
   renderer.insertFont(UI_10_FONT_ID, ui10FontFamily);
-  renderer.insertFont(UI_12_FONT_ID, ui12FontFamily);
+  // @ngxson [CUSTOM_FONTS]
+  bool hasCustom = customFont.load();
+  if (hasCustom) {
+    EpdFontFamily customFontFamily(customFont.getFont(), customFont.getFont());
+    renderer.insertFont(UI_12_FONT_ID, customFontFamily);
+  } else {
+    renderer.insertFont(UI_12_FONT_ID, ui12FontFamily);
+  }
   renderer.insertFont(SMALL_FONT_ID, smallFontFamily);
+
   Serial.printf("[%lu] [   ] Fonts setup\n", millis());
 }
 
@@ -318,6 +329,9 @@ void setup() {
 
   APP_STATE.loadFromFile();
   RECENT_BOOKS.loadFromFile();
+
+  // @ngxson [CUSTOM_FONTS]
+  customFont.tryFlashNewFont();
 
   if (APP_STATE.openEpubPath.empty()) {
     onGoHome();
