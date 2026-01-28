@@ -250,13 +250,46 @@ std::function<void()> onGoToApps = []() {
   enterNewActivity(new AppActivity(renderer, mappedInputManager, onGoHome));
 };
 
-#include <CustomFont.h> // @ngxson [CUSTOM_FONTS]
-CustomFont customFont;
+
+
+// @ngxson [CUSTOM_FONT]
+#include <FsSimple.h>
+FsSimple resources;
+void maybeFlashResources() {
+  FsFile file = SdMan.open("/resources.bin", O_RDONLY);
+  if (!file) {
+    Serial.printf("[%lu] [   ] No custom resources to flash\n", millis());
+    return;
+  }
+  const size_t fileSize = file.size();
+  Serial.printf("[%lu] [   ] Flashing custom resources (%u bytes)\n", millis(), fileSize);
+
+  static constexpr size_t CHUNK_SIZE = 4096;
+  uint8_t buffer[CHUNK_SIZE];
+  size_t bytesFlashed = 0;
+  while (bytesFlashed < fileSize) {
+    size_t toRead = std::min(CHUNK_SIZE, fileSize - bytesFlashed);
+    int bytesRead = file.read(buffer, toRead);
+    if (bytesRead <= 0) {
+      Serial.printf("[%lu] [   ] Error reading resources file to flash\n", millis());
+      return;
+    }
+    auto ok = resources.write(bytesFlashed, buffer, bytesRead);
+    if (!ok) {
+      Serial.printf("[%lu] [   ] Error flashing resources at offset %u\n", millis(), bytesFlashed);
+      return;
+    }
+    bytesFlashed += bytesRead;
+  }
+  Serial.printf("[%lu] [   ] Finished flashing custom resources\n", millis());
+  file.close();
+}
+
+
 
 void setupDisplayAndFonts() {
   display.begin();
   Serial.printf("[%lu] [   ] Display initialized\n", millis());
-  renderer.insertFont(BOOKERLY_14_FONT_ID, bookerly14FontFamily);
 #ifndef OMIT_FONTS
   renderer.insertFont(BOOKERLY_12_FONT_ID, bookerly12FontFamily);
   renderer.insertFont(BOOKERLY_16_FONT_ID, bookerly16FontFamily);
@@ -272,14 +305,7 @@ void setupDisplayAndFonts() {
   renderer.insertFont(OPENDYSLEXIC_14_FONT_ID, opendyslexic14FontFamily);
 #endif  // OMIT_FONTS
   renderer.insertFont(UI_10_FONT_ID, ui10FontFamily);
-  // @ngxson [CUSTOM_FONTS]
-  bool hasCustom = customFont.load();
-  if (hasCustom) {
-    EpdFontFamily customFontFamily(customFont.getFont(), customFont.getFont());
-    renderer.insertFont(UI_12_FONT_ID, customFontFamily);
-  } else {
-    renderer.insertFont(UI_12_FONT_ID, ui12FontFamily);
-  }
+  renderer.insertFont(UI_12_FONT_ID, ui12FontFamily);
   renderer.insertFont(SMALL_FONT_ID, smallFontFamily);
 
   Serial.printf("[%lu] [   ] Fonts setup\n", millis());
@@ -310,6 +336,10 @@ void setup() {
     return;
   }
 
+  // @ngxson [CUSTOM_FONT]
+  resources.begin();
+  maybeFlashResources();
+
   SETTINGS.loadFromFile();
   KOREADER_STORE.loadFromFile();
 
@@ -329,9 +359,6 @@ void setup() {
 
   APP_STATE.loadFromFile();
   RECENT_BOOKS.loadFromFile();
-
-  // @ngxson [CUSTOM_FONTS]
-  customFont.tryFlashNewFont();
 
   if (APP_STATE.openEpubPath.empty()) {
     onGoHome();
