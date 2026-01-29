@@ -5,7 +5,10 @@
 #include <utility>
 #include <functional>
 #include <vector>
+
+extern "C" {
 #include <mquickjs.h>
+}
 
 #include "../activities/Activity.h"
 

@@ -10,6 +10,8 @@
 
 extern "C" {
 
+#include <mquickjs.h>
+
 static JSValue js_print(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
 {
     return JS_UNDEFINED;
@@ -17,12 +19,12 @@ static JSValue js_print(JSContext *ctx, JSValue *this_val, int argc, JSValue *ar
 
 static JSValue js_date_now(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
 {
-    return JS_NewInt64(ctx, 0);
+    return JS_UNDEFINED;
 }
 
 static JSValue js_performance_now(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
 {
-    return JS_NewInt64(ctx, 0);
+    return JS_UNDEFINED;
 }
 
 static JSValue js_gc(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
@@ -46,7 +48,8 @@ static JSValue js_clearTimeout(JSContext *ctx, JSValue *this_val, int argc, JSVa
 }
 
 #include <mqjs_stdlib.h>
-#include <mquickjs.h>
+
+}
 
 
 
@@ -477,4 +480,4 @@ void AppActivity::appTaskLoop() {}
 
 
 
-}
+
