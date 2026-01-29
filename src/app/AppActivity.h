@@ -5,7 +5,7 @@
 #include <utility>
 #include <functional>
 #include <vector>
-#include <elk.h>
+#include <mquickjs.h>
 
 #include "../activities/Activity.h"
 
@@ -43,9 +43,9 @@ class AppActivity final : public Activity {
   struct ProgramContext {
     bool running = false;
     bool exited = false;
-    std::string code;
+    std::vector<char> prog;
     std::vector<char> mem;
-    js* jsCtx = nullptr; // note: allocated inside mem, no need free
+    JSContext* jsCtx = nullptr;
   };
   ProgramContext ctx;
 };

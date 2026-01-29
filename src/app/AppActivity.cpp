@@ -4,8 +4,52 @@
 
 #include <SDCardManager.h>
 #include <GfxRenderer.h>
-#include <elk.h>
 #include "fontIds.h"
+
+
+
+extern "C" {
+
+static JSValue js_print(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_UNDEFINED;
+}
+
+static JSValue js_date_now(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_NewInt64(ctx, 0);
+}
+
+static JSValue js_performance_now(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_NewInt64(ctx, 0);
+}
+
+static JSValue js_gc(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_UNDEFINED;
+}
+
+static JSValue js_load(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_UNDEFINED;
+}
+
+static JSValue js_setTimeout(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_UNDEFINED;
+}
+
+static JSValue js_clearTimeout(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_UNDEFINED;
+}
+
+#include <mqjs_stdlib.h>
+#include <mquickjs.h>
+
+
+
 
 
 void AppActivity::taskTrampoline(void* param) {
@@ -188,7 +232,7 @@ EpdFontFamily::Style styleFromString(const std::string& styleStr) {
   if (styleStr == "BOLD_ITALIC") return EpdFontFamily::BOLD_ITALIC;
   return EpdFontFamily::REGULAR;
 }
-
+/*
 std::string js_getstr(struct js* js, jsval_t val) {
   size_t len = 0;
   char* cstr = js_getstr(js, val, &len);
@@ -402,4 +446,35 @@ void AppActivity::appTaskLoop() {
   while (true) {
     vTaskDelay(1000 / portTICK_PERIOD_MS);
   }
+}
+*/
+
+
+void AppActivity::startProgram(std::string programName) {
+  std::string fullPath = "/apps/" + programName;
+  FsFile file = SdMan.open(fullPath.c_str(), O_RDONLY);
+  assert(file && file.isOpen());
+  size_t fileSize = file.size();
+
+  // create JS context
+  ctx = ProgramContext();
+  ctx.mem.resize(64 * 1024); // 64KB for now
+  ctx.jsCtx = JS_NewContext(ctx.mem.data(), ctx.mem.size(), &js_stdlib);
+
+  // load program code
+  ctx.prog.resize(fileSize);
+  size_t bytesRead = file.read(&ctx.prog[0], fileSize);
+  assert(bytesRead == fileSize);
+  file.close();
+  Serial.printf("[%lu] [APP] Starting program: %s (%u bytes)\n", millis(), programName.c_str(), (unsigned)ctx.prog.size());
+}
+
+void AppActivity::appTaskLoop() {}
+
+
+
+
+
+
+
 }
