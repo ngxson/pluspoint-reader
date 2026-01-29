@@ -5,7 +5,7 @@
 #include <cstdint>
 
 /// Font data stored PER GLYPH
-typedef struct __attribute__((packed)) {
+typedef struct {
   uint8_t width;        ///< Bitmap dimensions in pixels
   uint8_t height;       ///< Bitmap dimensions in pixels
   uint8_t advanceX;     ///< Distance to advance cursor (x axis)
@@ -16,14 +16,14 @@ typedef struct __attribute__((packed)) {
 } EpdGlyph;
 
 /// Glyph interval structure
-typedef struct __attribute__((packed)) {
+typedef struct {
   uint32_t first;   ///< The first unicode code point of the interval
   uint32_t last;    ///< The last unicode code point of the interval
   uint32_t offset;  ///< Index of the first code point into the glyph array
 } EpdUnicodeInterval;
 
 /// Data stored for FONT AS A WHOLE
-typedef struct __attribute__((packed)) {
+typedef struct {
   const uint8_t* bitmap;                ///< Glyph bitmaps, concatenated
   const EpdGlyph* glyph;                ///< Glyph array
   const EpdUnicodeInterval* intervals;  ///< Valid unicode intervals for this font

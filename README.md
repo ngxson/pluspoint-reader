@@ -14,7 +14,7 @@ Things that this fork is set out to support:
 - [x] Allow user-defined app, packaged as Javascript file under `/apps` directory
     - [ ] Cover more APIs
     - [ ] Allow app to be compressed into a more space-efficient format (inspired by BSON <--> JSON)
-- [ ] Allow custom fonts to be installed to SPIFFS partition
+- ~~Allow custom fonts to be installed to SPIFFS partition~~ Abandonned, potentially duplicated efforts with other contributors
 - [ ] Real-time clock (with calibration to minimize drifting)
 
 ## Emulated
