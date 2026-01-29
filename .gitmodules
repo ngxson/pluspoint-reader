@@ -1,3 +1,6 @@
 [submodule "open-x4-sdk"]
 	path = open-x4-sdk
 	url = https://github.com/open-x4-epaper/community-sdk.git
+[submodule "mquickjs"]
+	path = mquickjs
+	url = https://github.com/bellard/mquickjs
