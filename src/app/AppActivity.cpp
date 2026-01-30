@@ -47,7 +47,12 @@ static JSValue js_clearTimeout(JSContext *ctx, JSValue *this_val, int argc, JSVa
     return JS_UNDEFINED;
 }
 
-#include <mqjs_stdlib.h>
+static JSValue js_drawText(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv)
+{
+    return JS_UNDEFINED;
+}
+
+#include <crosspoint_stdlib.h>
 
 }
 
