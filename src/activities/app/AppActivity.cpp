@@ -1,9 +1,10 @@
 #include "AppActivity.h"
-#include "../MappedInputManager.h"
-#include "../util/StringUtils.h"
 
-#include <SDCardManager.h>
 #include <GfxRenderer.h>
+#include <MappedInputManager.h>
+#include <SDCardManager.h>
+
+#include "../../util/StringUtils.h"
 #include "fontIds.h"
 
 void AppActivity::taskTrampoline(void* param) {
@@ -87,7 +88,7 @@ void AppActivity::loop() {
   if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
     // delegate rendering to the app
     xSemaphoreTake(renderingMutex, portMAX_DELAY);
-    startProgram(programs[selectedIdx]); // TODO: handle errors
+    startProgram(programs[selectedIdx]);  // TODO: handle errors
     return;
   }
 
@@ -112,7 +113,7 @@ void AppActivity::loop() {
 
 void AppActivity::displayTaskLoop() {
   while (true) {
-    if (updateRequired) { //&& !subActivity) {
+    if (updateRequired) {  //&& !subActivity) {
       updateRequired = false;
       xSemaphoreTake(renderingMutex, portMAX_DELAY);
       render();
@@ -153,7 +154,6 @@ void AppActivity::render() const {
   // Always use standard refresh for settings screen
   renderer.displayBuffer();
 }
-
 
 //
 // APP RUNNER
@@ -197,7 +197,8 @@ void AppActivity::startProgram(std::string programName) {
 
   if (fileSize == 0 || fileSize > AppRunner::MAX_PROG_SIZE) {
     // TODO: show as a dialog message
-    Serial.printf("[%lu] [APP] Invalid program size: %u bytes, max supported = %u\n", millis(), (unsigned)fileSize, (unsigned)AppRunner::MAX_PROG_SIZE);
+    Serial.printf("[%lu] [APP] Invalid program size: %u bytes, max supported = %u\n", millis(), (unsigned)fileSize,
+                  (unsigned)AppRunner::MAX_PROG_SIZE);
     file.close();
     return;
   }
@@ -212,7 +213,8 @@ void AppActivity::startProgram(std::string programName) {
   assert(bytesRead == fileSize);
   runner.prog[fileSize] = '\0';
   file.close();
-  Serial.printf("[%lu] [APP] Starting program: %s (%u bytes)\n", millis(), programName.c_str(), (unsigned)runner.prog.size());
+  Serial.printf("[%lu] [APP] Starting program: %s (%u bytes)\n", millis(), programName.c_str(),
+                (unsigned)runner.prog.size());
 
   // clear screen before running
   renderer.clearScreen();
@@ -221,10 +223,10 @@ void AppActivity::startProgram(std::string programName) {
   // start new task
   runner.running = true;
   xTaskCreate(&AppActivity::taskAppTrampoline, "AppRuntimeTask",
-              4096,               // Stack size
-              this,               // Parameters
-              1,                  // Priority
-              &appTaskHandle      // Task handle
+              4096,           // Stack size
+              this,           // Parameters
+              1,              // Priority
+              &appTaskHandle  // Task handle
   );
 
   Serial.printf("[%lu] [APP] Program started\n", millis());

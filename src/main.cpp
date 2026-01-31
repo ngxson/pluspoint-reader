@@ -7,8 +7,6 @@
 #include <SPI.h>
 #include <builtinFonts/all.h>
 
-#include "app/AppActivity.h"
-
 #include <cstring>
 
 #include "Battery.h"
@@ -17,6 +15,7 @@
 #include "KOReaderCredentialStore.h"
 #include "MappedInputManager.h"
 #include "RecentBooksStore.h"
+#include "activities/app/AppActivity.h"
 #include "activities/boot_sleep/BootActivity.h"
 #include "activities/boot_sleep/SleepActivity.h"
 #include "activities/browser/OpdsBookBrowserActivity.h"
@@ -249,7 +248,6 @@ std::function<void()> onGoToApps = []() {
   exitActivity();
   enterNewActivity(new AppActivity(renderer, mappedInputManager, onGoHome));
 };
-
 
 void setupDisplayAndFonts() {
   display.begin();

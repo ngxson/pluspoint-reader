@@ -1,12 +1,12 @@
 #pragma once
 #include <EpdFontFamily.h>
 
+#include <functional>
 #include <string>
 #include <utility>
-#include <functional>
 #include <vector>
 
-#include "../activities/Activity.h"
+#include "../../activities/Activity.h"
 #include "AppRunner.h"
 
 // hacky solution to avoid changing too much code in main.cpp
@@ -27,8 +27,7 @@ class AppActivity final : public Activity {
   void startProgram(std::string programName);
 
  public:
-  explicit AppActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                            const std::function<void()>& onGoHome)
+  explicit AppActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, const std::function<void()>& onGoHome)
       : Activity("Settings", renderer, mappedInput), onGoHome(onGoHome) {}
   void onEnter() override;
   void onExit() override;
