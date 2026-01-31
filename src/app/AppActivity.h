@@ -6,11 +6,8 @@
 #include <functional>
 #include <vector>
 
-extern "C" {
-#include <mquickjs.h>
-}
-
 #include "../activities/Activity.h"
+#include "AppRunner.h"
 
 // hacky solution to avoid changing too much code in main.cpp
 extern std::function<void()> onGoToApps;
@@ -43,12 +40,4 @@ class AppActivity final : public Activity {
   // state
   std::vector<std::string> programs;
   size_t selectedIdx = 0;
-  struct ProgramContext {
-    bool running = false;
-    bool exited = false;
-    std::vector<char> prog;
-    std::vector<char> mem;
-    JSContext* jsCtx = nullptr;
-  };
-  ProgramContext ctx;
 };
