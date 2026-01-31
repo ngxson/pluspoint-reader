@@ -76,6 +76,36 @@ const char* argc_err_msg = "Expected at least %d arguments, but got %d";
   const char* varName; \
   varName = JS_ToCStringLen(ctx, &varName##Len, argv[index], &varName##Buf);
 
+static JSValue js_millis(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv) {
+  return JS_NewInt64(ctx, millis());
+}
+
+static JSValue js_btnIsPressed(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv) {
+  CHECK_ARGC(1);
+  GET_STRING_ARG(0, buttonStr);
+  if (!buttonStr) {
+    return JS_EXCEPTION;
+  }
+  MappedInputManager::Button button;
+  if (strcmp(buttonStr, "B") == 0) {
+    button = MappedInputManager::Button::Back;
+  } else if (strcmp(buttonStr, "C") == 0) {
+    button = MappedInputManager::Button::Confirm;
+  } else if (strcmp(buttonStr, "L") == 0) {
+    button = MappedInputManager::Button::Left;
+  } else if (strcmp(buttonStr, "R") == 0) {
+    button = MappedInputManager::Button::Right;
+  } else if (strcmp(buttonStr, "U") == 0) {
+    button = MappedInputManager::Button::Up;
+  } else if (strcmp(buttonStr, "D") == 0) {
+    button = MappedInputManager::Button::Down;
+  } else {
+    return JS_ThrowRangeError(ctx, "invalid button id '%s'", buttonStr);
+  }
+  bool isPressed = appInstance().mappedInput->isPressed(button);
+  return JS_NewBool(isPressed);
+}
+
 static JSValue js_getScreenWidth(JSContext *ctx, JSValue *this_val, int argc, JSValue *argv) {
   return appInstance().renderer->getScreenWidth();
 }
@@ -274,25 +304,41 @@ static JSValue js_drawSideButtonHints(JSContext *ctx, JSValue *this_val, int arg
 
 AppRunner AppRunner::instance;
 
-void AppRunner::run(GfxRenderer* gfxRenderer) {
-  renderer = gfxRenderer;
+static void dump_error(JSContext *jsCtx){
+  JSValue obj = JS_GetException(jsCtx);
+  JS_PrintValueF(jsCtx, obj, JS_DUMP_LONG);
+}
+
+static void serial_log_write_func(void *opaque, const void *buf, size_t buf_len) {
+  Serial.printf("[%lu] [MJS] %.*s", millis(), (int)buf_len, (const char*)buf);
+  Serial.write((const uint8_t*)buf, buf_len);
+  Serial.println();
+}
+
+void AppRunner::run(GfxRenderer* renderer, MappedInputManager* mappedInput) {
+  this->renderer = renderer;
+  this->mappedInput = mappedInput;
+
+  this->mem.resize(MAX_MEM_SIZE);
+  this->jsCtx = JS_NewContext(mem.data(), mem.size(), &js_stdlib);
+  JS_SetLogFunc(jsCtx, serial_log_write_func);
 
   JSValue val;
-  uint8_t *buf;
-  int ret, buf_len;
 
-  if (JS_IsBytecode(buf, buf_len)) {
+  if (JS_IsBytecode((const uint8_t*)prog.data(), prog.size())) {
     Serial.printf("[%lu] [APP] Loading bytecode...\n", millis());
-    if (JS_RelocateBytecode(jsCtx, buf, buf_len)) {
+    if (JS_RelocateBytecode(jsCtx, (uint8_t*)prog.data(), prog.size())) {
       Serial.printf("[%lu] [APP] Failed to relocate bytecode\n", millis());
     }
-    val = JS_LoadBytecode(jsCtx, buf);
+    val = JS_LoadBytecode(jsCtx, (const uint8_t*)prog.data());
   } else {
+    Serial.printf("[%lu] [APP] Parsing program from source...\n", millis());
     int parse_flags = 0;
-    val = JS_Parse(jsCtx, (char *)buf, buf_len, "app", parse_flags);
+    val = JS_Parse(jsCtx, prog.data(), prog.size(), "app", parse_flags);
   }
 
   if (JS_IsException(val)) {
+    dump_error(jsCtx);
     Serial.printf("[%lu] [APP] Got exception on parsing program\n", millis());
     return;
   }
@@ -300,6 +346,7 @@ void AppRunner::run(GfxRenderer* gfxRenderer) {
   val = JS_Run(jsCtx, val);
 
   if (JS_IsException(val)) {
+    dump_error(jsCtx);
     Serial.printf("[%lu] [APP] Program exited with exception\n", millis());
     return;
   }

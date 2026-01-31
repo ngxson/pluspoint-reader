@@ -342,6 +342,26 @@ static const JSPropDef js_cp[] = {
     JS_PROP_STRING_DEF("TEXT_ITALIC", "I", 0),
     JS_PROP_STRING_DEF("TEXT_BOLD_ITALIC", "J", 0),
 
+    JS_PROP_STRING_DEF("BTN_BACK", "B", 0),
+    JS_PROP_STRING_DEF("BTN_CONFIRM", "C", 0),
+    JS_PROP_STRING_DEF("BTN_LEFT", "L", 0),
+    JS_PROP_STRING_DEF("BTN_RIGHT", "R", 0),
+    JS_PROP_STRING_DEF("BTN_UP", "U", 0),
+    JS_PROP_STRING_DEF("BTN_DOWN", "D", 0),
+
+    /**
+     * @brief Get the number of milliseconds since the device was powered on
+     * @return {number} Milliseconds since power on
+     */
+    JS_CFUNC_DEF("millis", 0, js_millis),
+
+    /**
+     * @brief Check if a button is currently pressed
+     * @param {string} buttonId The ID of the button to check (e.g., CP.BTN_BACK, CP.BTN_CONFIRM, etc.)
+     * @return {boolean} True if the button is pressed, false otherwise
+     */
+    JS_CFUNC_DEF("btnIsPressed", 0, js_btnIsPressed),
+
     /**
      * @brief Get screen width, ben changed based on orientation
      * @return {number} Screen width in pixels
@@ -356,7 +376,7 @@ static const JSPropDef js_cp[] = {
 
     /**
      * @brief Clear the screen buffer
-     * @param {number} color The color to clear the screen to (0x00-0xFF)
+     * @param {number} color The color to clear the screen to (0-255, where 0 = black, 255 = white)
      * @return {void}
      */
     JS_CFUNC_DEF("clearScreen", 1, js_clearScreen),

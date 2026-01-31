@@ -54,6 +54,9 @@ void AppActivity::onEnter() {
 void AppActivity::onExit() {
   Activity::onExit();
 
+  auto& runner = AppRunner::getInstance();
+  runner.reset();
+
   xSemaphoreTake(renderingMutex, portMAX_DELAY);
   if (displayTaskHandle) {
     vTaskDelete(displayTaskHandle);
@@ -74,7 +77,7 @@ void AppActivity::loop() {
       vTaskDelete(appTaskHandle);
       appTaskHandle = nullptr;
     }
-    runner.exited = false;
+    runner.reset();
     updateRequired = true;
     // give back rendering control
     xSemaphoreGive(renderingMutex);
@@ -204,8 +207,10 @@ void AppActivity::startProgram(std::string programName) {
   runner.reset();
 
   // load program code
+  runner.prog.resize(fileSize + 1);
   size_t bytesRead = file.read(&runner.prog[0], fileSize);
   assert(bytesRead == fileSize);
+  runner.prog[fileSize] = '\0';
   file.close();
   Serial.printf("[%lu] [APP] Starting program: %s (%u bytes)\n", millis(), programName.c_str(), (unsigned)runner.prog.size());
 
@@ -230,10 +235,15 @@ void AppActivity::appTaskLoop() {
   assert(runner.running && "program not running");
 
   // run program code
-  runner.run(&renderer);
+  runner.run(&renderer, &mappedInput);
 
   // program ended
   Serial.printf("[%lu] [APP] Program ended\n", millis());
   runner.running = false;
   runner.exited = true;
+
+  // keep task alive until main loop cleans up
+  while (true) {
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+  }
 }
