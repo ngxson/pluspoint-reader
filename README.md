@@ -15,7 +15,6 @@ Things that this fork is set out to support:
     - [x] Cover more APIs
     - [ ] Allow app to be compressed into a more space-efficient format (inspired by BSON <--> JSON)
     - [ ] Add networking APIs
-- ~~Allow custom fonts to be installed to SPIFFS partition~~ Abandonned, potentially duplicated efforts with other contributors
 - [ ] Real-time clock (with calibration to minimize drifting)
 
 ## Custom JS apps
