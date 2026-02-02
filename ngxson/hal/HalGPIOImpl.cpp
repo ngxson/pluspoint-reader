@@ -169,16 +169,24 @@ bool HalGPIO::isUsbConnected() const {
 #endif
 }
 
-bool HalGPIO::isWakeupByPowerButton() const {
+HalGPIO::WakeupReason HalGPIO::getWakeupReason() const {
 #ifndef EMULATED
+  const bool usbConnected = isUsbConnected();
   const auto wakeupCause = esp_sleep_get_wakeup_cause();
   const auto resetReason = esp_reset_reason();
-  if (isUsbConnected()) {
-    return wakeupCause == ESP_SLEEP_WAKEUP_GPIO;
-  } else {
-    return (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED) && (resetReason == ESP_RST_POWERON);
+
+  if ((wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED && resetReason == ESP_RST_POWERON && !usbConnected) ||
+      (wakeupCause == ESP_SLEEP_WAKEUP_GPIO && resetReason == ESP_RST_DEEPSLEEP && usbConnected)) {
+    return WakeupReason::PowerButton;
   }
+  if (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED && resetReason == ESP_RST_UNKNOWN && usbConnected) {
+    return WakeupReason::AfterFlash;
+  }
+  if (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED && resetReason == ESP_RST_POWERON && usbConnected) {
+    return WakeupReason::AfterUSBPower;
+  }
+  return WakeupReason::Other;
 #else
-  return false;
+  return WakeupReason::AfterFlash; // always wake up
 #endif
 }
