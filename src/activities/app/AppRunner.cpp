@@ -76,8 +76,53 @@ const char* argc_err_msg = "Expected at least %d arguments, but got %d";
   const char* varName;                 \
   varName = JS_ToCStringLen(ctx, &varName##Len, argv[index], &varName##Buf);
 
+struct BufferPtr {
+  uint8_t* ptr;
+  size_t length;
+};
+
+static BufferPtr getUnderlayBuffer(JSContext* ctx, JSValue val) {
+  if (!JS_IsString(ctx, val)) {
+    return BufferPtr{nullptr, 0};
+  }
+  BufferPtr ret;
+  JSCStringBuf unused;
+  ret.ptr = reinterpret_cast<uint8_t*>(const_cast<char*>(
+      JS_ToCStringLen(ctx, &ret.length, val, &unused)));
+  return ret;
+}
+
 static JSValue js_millis(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
   return JS_NewInt64(ctx, millis());
+}
+
+static JSValue js_delay(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
+  CHECK_ARGC(1);
+  int delayMs;
+  if (JS_ToInt32(ctx, &delayMs, argv[0])) return JS_EXCEPTION;
+  if (delayMs < 0) {
+    return JS_ThrowRangeError(ctx, "delayMs must be non-negative");
+  }
+  delay(delayMs);
+  return JS_UNDEFINED;
+}
+
+static JSValue js_createBuffer(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
+  CHECK_ARGC(1);
+  int length;
+  if (JS_ToInt32(ctx, &length, argv[0])) return JS_EXCEPTION;
+  if (length < 0) {
+    return JS_ThrowRangeError(ctx, "length must be non-negative");
+  }
+  // HACK: in order to save memory, we "fake" a input string by using the pointer to ctx memory
+  auto buffer = appInstance().mem.data();
+  JSValue str = JS_NewStringLen(ctx, buffer, length);
+  // then, we create the buffer
+  auto underlayBuf = getUnderlayBuffer(ctx, str);
+  assert(underlayBuf.ptr != nullptr);
+  assert(underlayBuf.length == (size_t)length);
+  memset(underlayBuf.ptr, 0, length);
+  return str;
 }
 
 static JSValue js_btnIsPressed(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
@@ -130,6 +175,92 @@ static JSValue js_displayBuffer(JSContext* ctx, JSValue* this_val, int argc, JSV
   int refreshMode = HalDisplay::FAST_REFRESH;
   if (JS_ToInt32(ctx, &refreshMode, argv[0])) return JS_EXCEPTION;
   appInstance().renderer->displayBuffer((HalDisplay::RefreshMode)refreshMode);
+  return JS_UNDEFINED;
+}
+
+static JSValue js_fileStat(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
+  CHECK_ARGC(1);
+  GET_STRING_ARG(0, pathStr);
+  if (!pathStr) {
+    return JS_EXCEPTION;
+  }
+  FsFile file;
+  bool ok = SdMan.openFileForWrite("APP", pathStr, file);
+  if (!ok || !file.isOpen()) {
+    file.close();
+    return JS_NewInt32(ctx, -1);  // file does not exist
+  }
+  if (file.isDirectory()) {
+    file.close();
+    return JS_NewInt32(ctx, -2);  // is a directory
+  }
+  int32_t fsize = file.fileSize();
+  file.close();
+  return JS_NewInt32(ctx, fsize);
+}
+
+static JSValue js_fileRead(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
+  CHECK_ARGC(4);
+  GET_STRING_ARG(0, pathStr);
+  int offset;
+  int length;
+  auto output = getUnderlayBuffer(ctx, argv[1]);
+  if (!output.ptr) {
+    return JS_ThrowTypeError(ctx, "output must be a string buffer");
+  }
+  if (!pathStr || JS_ToInt32(ctx, &offset, argv[2]) || JS_ToInt32(ctx, &length, argv[3])) {
+    return JS_EXCEPTION;
+  }
+  if (offset < 0 || length < 0) {
+    return JS_ThrowRangeError(ctx, "offset and length must be non-negative");
+  }
+  if ((size_t)length > output.length) {
+    return JS_ThrowRangeError(ctx, "output buffer is too small (needed %d, got %d)", length, output.length);
+  }
+  FsFile file;
+  bool ok = SdMan.openFileForRead("APP", pathStr, file);
+  if (!ok || !file.isOpen() || file.isDirectory()) {
+    file.close();
+    return JS_ThrowInternalError(ctx, "could not open file '%s' for reading", pathStr);
+  }
+  if (offset > file.size()) {
+    file.close();
+    return JS_ThrowRangeError(ctx, "offset is beyond end of file");
+  }
+  file.seek(offset);
+  file.read(output.ptr, length);
+  file.close();
+  return JS_UNDEFINED;
+}
+
+static JSValue js_fileWrite(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
+  CHECK_ARGC(3);
+  GET_STRING_ARG(0, pathStr);
+  int offset;
+  int length;
+  auto data = getUnderlayBuffer(ctx, argv[1]);
+  if (!data.ptr) {
+    return JS_ThrowTypeError(ctx, "data must be a string buffer");
+  }
+  if (!pathStr || JS_ToInt32(ctx, &offset, argv[2]) || JS_ToInt32(ctx, &length, argv[3])) {
+    return JS_EXCEPTION;
+  }
+  if (offset < 0 || length < 0) {
+    return JS_ThrowRangeError(ctx, "offset and length must be non-negative");
+  }
+  FsFile file;
+  bool ok = SdMan.openFileForWrite("APP", pathStr, file);
+  if (!ok || !file.isOpen() || file.isDirectory()) {
+    file.close();
+    return JS_ThrowInternalError(ctx, "could not open file '%s' for writing", pathStr);
+  }
+  if ((size_t)offset > file.size()) {
+    file.close();
+    return JS_ThrowRangeError(ctx, "offset is beyond end of file");
+  }
+  file.seek(offset);
+  file.write(data.ptr, length);
+  file.close();
   return JS_UNDEFINED;
 }
 

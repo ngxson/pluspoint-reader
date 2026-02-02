@@ -28,6 +28,214 @@
 
 #include "mquickjs_build.h"
 
+
+
+// Crosspoint-specific functions (will invoke native C++ code)
+static const JSPropDef js_cp[] = {
+    JS_PROP_STRING_DEF("FAST_REFRESH", "F", 0),
+    JS_PROP_STRING_DEF("HALF_REFRESH", "H", 0),
+    JS_PROP_STRING_DEF("FULL_REFRESH", "A", 0),
+
+    JS_PROP_STRING_DEF("FONT_UI_10", "UI10", 0),
+    JS_PROP_STRING_DEF("FONT_UI_12", "UI12", 0),
+    JS_PROP_STRING_DEF("FONT_SMALL", "SM", 0),
+
+    JS_PROP_STRING_DEF("TEXT_REGULAR", "R", 0),
+    JS_PROP_STRING_DEF("TEXT_BOLD", "B", 0),
+    JS_PROP_STRING_DEF("TEXT_ITALIC", "I", 0),
+    JS_PROP_STRING_DEF("TEXT_BOLD_ITALIC", "J", 0),
+
+    JS_PROP_STRING_DEF("BTN_BACK", "B", 0),
+    JS_PROP_STRING_DEF("BTN_CONFIRM", "C", 0),
+    JS_PROP_STRING_DEF("BTN_LEFT", "L", 0),
+    JS_PROP_STRING_DEF("BTN_RIGHT", "R", 0),
+    JS_PROP_STRING_DEF("BTN_UP", "U", 0),
+    JS_PROP_STRING_DEF("BTN_DOWN", "D", 0),
+
+    /**
+     * @brief Get the number of milliseconds since the device was powered on
+     * @return {number} Milliseconds since power on
+     */
+    JS_CFUNC_DEF("millis", 0, js_millis),
+
+    /**
+     * @brief Delay execution for a specified number of milliseconds
+     * @param {number} ms The number of milliseconds to delay
+     * @return {void}
+     */
+    JS_CFUNC_DEF("delay", 1, js_delay),
+
+    /**
+     * @brief Create a buffer of the specified size
+     * @param {number} size The size of the buffer to create
+     * @return {string} The created buffer
+     */
+    JS_CFUNC_DEF("createBuffer", 1, js_createBuffer),
+
+    /**
+     * @brief Check if a button is currently pressed
+     * @param {string} buttonId The ID of the button to check (e.g., CP.BTN_BACK, CP.BTN_CONFIRM, etc.)
+     * @return {boolean} True if the button is pressed, false otherwise
+     */
+    JS_CFUNC_DEF("btnIsPressed", 0, js_btnIsPressed),
+
+    /**
+     * @brief Get screen width, ben changed based on orientation
+     * @return {number} Screen width in pixels
+     */
+    JS_CFUNC_DEF("getScreenWidth", 0, js_getScreenWidth),
+
+    /**
+     * @brief Get screen height, ben changed based on orientation
+     * @return {number} Screen height in pixels
+     */
+    JS_CFUNC_DEF("getScreenHeight", 0, js_getScreenHeight),
+
+    /**
+     * @brief Clear the screen buffer
+     * @param {number} color The color to clear the screen to (0-255, where 0 = black, 255 = white)
+     * @return {void}
+     */
+    JS_CFUNC_DEF("clearScreen", 1, js_clearScreen),
+
+    /**
+     * @brief Display the screen buffer
+     * @param {string} refreshMode The refresh mode to use (0 = CP.FAST_REFRESH, 1 = CP.FULL_REFRESH, etc.)
+     * @return {void}
+     */
+    JS_CFUNC_DEF("displayBuffer", 1, js_displayBuffer),
+
+    //// FILE SYSTEM FUNCTIONS ////
+
+    /**
+     * @brief Get file stats
+     * @param {string} path The path to the file
+     * @return {int} File size in bytes, or -1 if the file does not exist, or -2 if it is a directory
+     */
+    JS_CFUNC_DEF("fileStat", 1, js_fileStat),
+
+    /**
+     * @brief Read the contents of a file
+     * @param {string} path The path to the file
+     * @param {string} output The output buffer, should be allocated by createBuffer()
+     * @param {int} offset The offset to start reading from
+     * @param {int} length The number of bytes to read (if -1: read the entire file)
+     * @return {void}
+     */
+    JS_CFUNC_DEF("fileRead", 4, js_fileRead),
+
+    /**
+     * @brief Write data to a file
+     * @param {string} path The path to the file
+     * @param {string} data The data to write to the file
+     * @param {int} offset The offset to start writing to
+     * @param {int} length The number of bytes to write
+     * @return {void}
+     */
+    JS_CFUNC_DEF("fileWrite", 3, js_fileWrite),
+
+    //// DRAWING FUNCTIONS ////
+
+    /**
+     * @brief Draws a line from (x1, y1) to (x2, y2).
+     * @param x1 {number} The x-coordinate of the starting point.
+     * @param y1 {number} The y-coordinate of the starting point.
+     * @param x2 {number} The x-coordinate of the ending point.
+     * @param y2 {number} The y-coordinate of the ending point.
+     * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
+     */
+    JS_CFUNC_DEF("drawLine", 5, js_drawLine),
+
+    /**
+     * @brief Draws the outline of a rectangle at the specified position with the given dimensions.
+     * @param x {number} The x-coordinate of the top-left corner of the rectangle.
+     * @param y {number} The y-coordinate of the top-left corner of the rectangle.
+     * @param width {number} The width of the rectangle.
+     * @param height {number} The height of the rectangle.
+     * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
+     */
+    JS_CFUNC_DEF("drawRect", 5, js_drawRect),
+
+    /**
+     * @brief Fills a rectangle at the specified position with the given dimensions.
+     * @param x {number} The x-coordinate of the top-left corner of the rectangle.
+     * @param y {number} The y-coordinate of the top-left corner of the rectangle.
+     * @param width {number} The width of the rectangle.
+     * @param height {number} The height of the rectangle.
+     * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
+     */
+    JS_CFUNC_DEF("fillRect", 5, js_fillRect),
+
+    /**
+     * @brief Draws a bitmap image at the specified position with the given dimensions.
+     * @param bitmap {string} The array of bytes representing the bitmap data, 1bpp, must have total size of (width * height) / 8.
+     * @param x {number} The x-coordinate of the top-left corner where the image will be drawn.
+     * @param y {number} The y-coordinate of the top-left corner where the image will be drawn.
+     * @param width {number} The width of the image.
+     * @param height {number} The height of the image.
+     */
+    JS_CFUNC_DEF("drawImage", 5, js_drawImage),
+
+
+    /**
+     * @brief Get the width in pixels of the text.
+     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
+     * @param text {string} The text to measure.
+     * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
+     */
+    JS_CFUNC_DEF("getTextWidth", 3, js_getTextWidth),
+
+    /**
+     * @brief Draws centered text at the specified y-coordinate (non-wrapped).
+     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
+     * @param y {number} The y-coordinate where the text will be drawn.
+     * @param text {string} The text to draw.
+     * @param black {boolean} Whether to draw the text in black (true) or white (false).
+     * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
+     */
+    JS_CFUNC_DEF("drawCenteredText", 5, js_drawCenteredText),
+
+    /**
+     * @brief Draws text at the specified position (non-wrapped).
+     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
+     * @param x {number} The x-coordinate where the text will be drawn.
+     * @param y {number} The y-coordinate where the text will be drawn.
+     * @param text {string} The text to draw.
+     * @param black {boolean} Whether to draw the text in black (true) or white (false).
+     * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
+     */
+    JS_CFUNC_DEF("drawText", 6, js_drawText),
+
+    // JS_CFUNC_DEF("drawTextBox", 6, js_drawText), // TODO: implement drawTextBox
+
+
+    /**
+     * @brief Draws button hints at the bottom of the screen.
+     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
+     * @param btn1Text {string} The text for button 1.
+     * @param btn2Text {string} The text for button 2.
+     * @param btn3Text {string} The text for button 3.
+     * @param btn4Text {string} The text for button 4.
+     */
+    JS_CFUNC_DEF("drawButtonHints", 5, js_drawButtonHints),
+
+    /**
+     * @brief Draws side button hints on the left and right sides of the screen.
+     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
+     * @param topBtnText {string} The text for the top side button.
+     * @param bottomBtnText {string} The text for the bottom side button.
+     */
+    JS_CFUNC_DEF("drawSideButtonHints", 3, js_drawSideButtonHints),
+
+    JS_PROP_END,
+};
+
+static const JSClassDef js_cp_obj =
+    JS_OBJECT_DEF("CP", js_cp);
+// End of Crosspoint-specific functions
+
+
+
 /* defined in mqjs_example.c */
 //#define CONFIG_CLASS_EXAMPLE
 
@@ -325,167 +533,6 @@ static const JSPropDef js_performance[] = {
 };
 static const JSClassDef js_performance_obj =
     JS_OBJECT_DEF("Performance", js_performance);
-
-// Crosspoint-specific functions (will invoke native C++ code)
-#define JS_PROP_INT_DEF(name, val, flags) { JS_DEF_PROP_DOUBLE, name, { .f64 = val } }
-static const JSPropDef js_cp[] = {
-    JS_PROP_STRING_DEF("FAST_REFRESH", "F", 0),
-    JS_PROP_STRING_DEF("HALF_REFRESH", "H", 0),
-    JS_PROP_STRING_DEF("FULL_REFRESH", "A", 0),
-
-    JS_PROP_STRING_DEF("FONT_UI_10", "UI10", 0),
-    JS_PROP_STRING_DEF("FONT_UI_12", "UI12", 0),
-    JS_PROP_STRING_DEF("FONT_SMALL", "SM", 0),
-
-    JS_PROP_STRING_DEF("TEXT_REGULAR", "R", 0),
-    JS_PROP_STRING_DEF("TEXT_BOLD", "B", 0),
-    JS_PROP_STRING_DEF("TEXT_ITALIC", "I", 0),
-    JS_PROP_STRING_DEF("TEXT_BOLD_ITALIC", "J", 0),
-
-    JS_PROP_STRING_DEF("BTN_BACK", "B", 0),
-    JS_PROP_STRING_DEF("BTN_CONFIRM", "C", 0),
-    JS_PROP_STRING_DEF("BTN_LEFT", "L", 0),
-    JS_PROP_STRING_DEF("BTN_RIGHT", "R", 0),
-    JS_PROP_STRING_DEF("BTN_UP", "U", 0),
-    JS_PROP_STRING_DEF("BTN_DOWN", "D", 0),
-
-    /**
-     * @brief Get the number of milliseconds since the device was powered on
-     * @return {number} Milliseconds since power on
-     */
-    JS_CFUNC_DEF("millis", 0, js_millis),
-
-    /**
-     * @brief Check if a button is currently pressed
-     * @param {string} buttonId The ID of the button to check (e.g., CP.BTN_BACK, CP.BTN_CONFIRM, etc.)
-     * @return {boolean} True if the button is pressed, false otherwise
-     */
-    JS_CFUNC_DEF("btnIsPressed", 0, js_btnIsPressed),
-
-    /**
-     * @brief Get screen width, ben changed based on orientation
-     * @return {number} Screen width in pixels
-     */
-    JS_CFUNC_DEF("getScreenWidth", 0, js_getScreenWidth),
-
-    /**
-     * @brief Get screen height, ben changed based on orientation
-     * @return {number} Screen height in pixels
-     */
-    JS_CFUNC_DEF("getScreenHeight", 0, js_getScreenHeight),
-
-    /**
-     * @brief Clear the screen buffer
-     * @param {number} color The color to clear the screen to (0-255, where 0 = black, 255 = white)
-     * @return {void}
-     */
-    JS_CFUNC_DEF("clearScreen", 1, js_clearScreen),
-
-    /**
-     * @brief Display the screen buffer
-     * @param {string} refreshMode The refresh mode to use (0 = CP.FAST_REFRESH, 1 = CP.FULL_REFRESH, etc.)
-     * @return {void}
-     */
-    JS_CFUNC_DEF("displayBuffer", 1, js_displayBuffer),
-
-
-    /**
-     * @brief Draws a line from (x1, y1) to (x2, y2).
-     * @param x1 {number} The x-coordinate of the starting point.
-     * @param y1 {number} The y-coordinate of the starting point.
-     * @param x2 {number} The x-coordinate of the ending point.
-     * @param y2 {number} The y-coordinate of the ending point.
-     * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
-     */
-    JS_CFUNC_DEF("drawLine", 5, js_drawLine),
-
-    /**
-     * @brief Draws the outline of a rectangle at the specified position with the given dimensions.
-     * @param x {number} The x-coordinate of the top-left corner of the rectangle.
-     * @param y {number} The y-coordinate of the top-left corner of the rectangle.
-     * @param width {number} The width of the rectangle.
-     * @param height {number} The height of the rectangle.
-     * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
-     */
-    JS_CFUNC_DEF("drawRect", 5, js_drawRect),
-
-    /**
-     * @brief Fills a rectangle at the specified position with the given dimensions.
-     * @param x {number} The x-coordinate of the top-left corner of the rectangle.
-     * @param y {number} The y-coordinate of the top-left corner of the rectangle.
-     * @param width {number} The width of the rectangle.
-     * @param height {number} The height of the rectangle.
-     * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
-     */
-    JS_CFUNC_DEF("fillRect", 5, js_fillRect),
-
-    /**
-     * @brief Draws a bitmap image at the specified position with the given dimensions.
-     * @param bitmap {ArrayBuffer} The array of bytes representing the bitmap data, 1bpp, must have total size of (width * height) / 8.
-     * @param x {number} The x-coordinate of the top-left corner where the image will be drawn.
-     * @param y {number} The y-coordinate of the top-left corner where the image will be drawn.
-     * @param width {number} The width of the image.
-     * @param height {number} The height of the image.
-     */
-    JS_CFUNC_DEF("drawImage", 5, js_drawImage),
-
-
-    /**
-     * @brief Get the width in pixels of the text.
-     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
-     * @param text {string} The text to measure.
-     * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
-     */
-    JS_CFUNC_DEF("getTextWidth", 3, js_getTextWidth),
-
-    /**
-     * @brief Draws centered text at the specified y-coordinate (non-wrapped).
-     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
-     * @param y {number} The y-coordinate where the text will be drawn.
-     * @param text {string} The text to draw.
-     * @param black {boolean} Whether to draw the text in black (true) or white (false).
-     * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
-     */
-    JS_CFUNC_DEF("drawCenteredText", 5, js_drawCenteredText),
-
-    /**
-     * @brief Draws text at the specified position (non-wrapped).
-     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
-     * @param x {number} The x-coordinate where the text will be drawn.
-     * @param y {number} The y-coordinate where the text will be drawn.
-     * @param text {string} The text to draw.
-     * @param black {boolean} Whether to draw the text in black (true) or white (false).
-     * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
-     */
-    JS_CFUNC_DEF("drawText", 6, js_drawText),
-
-    // JS_CFUNC_DEF("drawTextBox", 6, js_drawText), // TODO: implement drawTextBox
-
-
-    /**
-     * @brief Draws button hints at the bottom of the screen.
-     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
-     * @param btn1Text {string} The text for button 1.
-     * @param btn2Text {string} The text for button 2.
-     * @param btn3Text {string} The text for button 3.
-     * @param btn4Text {string} The text for button 4.
-     */
-    JS_CFUNC_DEF("drawButtonHints", 5, js_drawButtonHints),
-
-    /**
-     * @brief Draws side button hints on the left and right sides of the screen.
-     * @param fontId {string} The ID of the font to use (e.g., CP.FONT_UI_10, CP.FONT_SMALL, etc.)
-     * @param topBtnText {string} The text for the top side button.
-     * @param bottomBtnText {string} The text for the bottom side button.
-     */
-    JS_CFUNC_DEF("drawSideButtonHints", 3, js_drawSideButtonHints),
-
-    JS_PROP_END,
-};
-
-static const JSClassDef js_cp_obj =
-    JS_OBJECT_DEF("CP", js_cp);
-// End of Crosspoint-specific functions
 
 static const JSPropDef js_global_object[] = {
     JS_PROP_CLASS_DEF("Object", &js_object_class),
