@@ -369,7 +369,12 @@ static JSValue js_drawText(JSContext* ctx, JSValue* this_val, int argc, JSValue*
   GET_STRING_ARG(0, fontIdStr);
   GET_STRING_ARG(3, text);
   GET_STRING_ARG(5, styleStr);
-  if (!fontIdStr || JS_ToInt32(ctx, &y, argv[2]) || !text || JS_ToInt32(ctx, &black, argv[4]) || !styleStr) {
+  if (!fontIdStr
+      || JS_ToInt32(ctx, &x, argv[1])
+      || JS_ToInt32(ctx, &y, argv[2])
+      || !text
+      || JS_ToInt32(ctx, &black, argv[4])
+      || !styleStr) {
     return JS_EXCEPTION;
   }
   int fontId = fontIdFromString(fontIdStr);
