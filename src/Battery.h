@@ -9,7 +9,7 @@ static BatteryMonitor battery(BAT_GPIO0);
 class BatteryMonitor {
  public:
   explicit BatteryMonitor() {}
-  int readPercentage() const { return 100; } // Always return full battery in emulation
+  int readPercentage() const { return 100; }  // Always return full battery in emulation
 };
 static BatteryMonitor battery;
 #endif

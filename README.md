@@ -2,7 +2,7 @@
 
 This is a fork of [crosspoint-reader](https://github.com/crosspoint-reader/crosspoint-reader) that I created out of curiousity. The main motivation is to add some coplex features that will have slim chance of being upstreamed.
 
-For the name of this project, "Plus" has a double meaning: It means both "being more" and "my love for C++"
+For the name of this project, "Plus" has a double meaning: It means both "being more" and "my passion for C++"
 
 Philosophical design behind this fork:
 - We only target **low-level** changes, things that does not directly alter the UI/UX
@@ -12,16 +12,28 @@ Philosophical design behind this fork:
 Things that this fork is set out to support:
 - [x] Emulation (for a better DX)
 - [x] Allow user-defined app, packaged as Javascript file under `/apps` directory
-    - [ ] Cover more APIs
+    - [x] Cover more APIs
     - [ ] Allow app to be compressed into a more space-efficient format (inspired by BSON <--> JSON)
-- ~~Allow custom fonts to be installed to SPIFFS partition~~ Abandonned, potentially duplicated efforts with other contributors
+    - [ ] Add networking APIs
 - [ ] Real-time clock (with calibration to minimize drifting)
+
+## Custom JS apps
+
+PlusPoint is shipped with an experimental implementation of user-defined JS apps, powered by [mquickjs](https://github.com/bellard/mquickjs).
+
+For more details, please refer to [apps documentation](docs/apps/applications.md)
+
+<img width="800" height="769" alt="Image" src="https://github.com/user-attachments/assets/2f513b77-29fb-498c-aad8-d54dd4d12bf2" />
+
 
 ## Emulated
 
 This fork provides a semi-emulated solution that allows running CrossPoint / PlusPoint on a cheap barebone ESP32C3. This allow faster development without the risk of (soft) bricking the real device.
 
 Why don't we use QEMU? Please refer to [this discussion](https://github.com/crosspoint-reader/crosspoint-reader/pull/500)
+
+<details>
+  <summary>More details</summary>
 
 <img width="1544" height="931" alt="Image" src="https://github.com/user-attachments/assets/9e9deee2-2b27-4490-8c6e-43bca2e13bb4" />
 
@@ -47,37 +59,4 @@ Known issue(s):
 - For now, the `FATAL: Timeout waiting for response` can sometimes pop up. If it stucks in bootloop, exit the python script, press RST on the board, then re-connect it.
 - Sometimes, too frequent FS_READ and FS_WRITE can also trigger the issue above. If it when into bootloop, try deleting content inside `{project_directory}/.sdcard/.crosspoint`
 
-## Custom JS apps
-
-We have an experimental version of user-defined JS apps (built upon [cesanta/elk](https://github.com/cesanta/elk)). Only a subset of JS syntax is supported.
-
-Applications can be loaded onto SD card `/app` folder, requires to name the file with `.js` extension.
-
-TODO: more details on this
-
-Example application:
-
-```js
-let count = 0;
-let last_ms = 0;
-
-while (true) {
-  let now_ms = millis();
-  if (now_ms - last_ms >= 1000) {
-    last_ms = now_ms;
-    count += 1;
-    clearScreen(false); // true = black, false = white
-    drawCenteredText("UI_12", pageHeight / 2, "Hello World!", true, "BOLD");
-    drawCenteredText("UI_12", pageHeight / 2 + 30, "count = " + toString(count), true, "REGULAR");
-    displayBuffer();
-  }
-
-  if (isButtonPressed(BTN_BACK)) {
-    break; // exit the program
-  }
-}
-```
-
-Output: The counter is updated every 1 second
-
-<img width="497" height="219" alt="Image" src="https://github.com/user-attachments/assets/42d51278-ba14-4f48-9e9e-cc31f76fba4c" />
+</details>

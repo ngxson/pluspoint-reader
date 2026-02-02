@@ -6,8 +6,6 @@
 #include <SDCardManager.h>
 #include <Xtc.h>
 
-#include "app/AppActivity.h"
-
 #include <cstring>
 #include <vector>
 
@@ -16,6 +14,7 @@
 #include "CrossPointState.h"
 #include "MappedInputManager.h"
 #include "ScreenComponents.h"
+#include "activities/app/AppActivity.h"
 #include "fontIds.h"
 #include "util/StringUtils.h"
 
@@ -28,7 +27,7 @@ int HomeActivity::getMenuItemCount() const {
   int count = 3;  // My Library, File transfer, Settings
   if (hasContinueReading) count++;
   if (hasOpdsUrl) count++;
-  count++; // @ngxson [CUSTOM_APP]
+  count++;  // @ngxson [CUSTOM_APP]
   return count;
 }
 
@@ -176,7 +175,7 @@ void HomeActivity::loop() {
     int idx = 0;
     const int continueIdx = hasContinueReading ? idx++ : -1;
     const int myLibraryIdx = idx++;
-    const int appActivityIdx = idx++; // @ngxson [CUSTOM_APP]
+    const int appActivityIdx = idx++;  // @ngxson [CUSTOM_APP]
     const int opdsLibraryIdx = hasOpdsUrl ? idx++ : -1;
     const int fileTransferIdx = idx++;
     const int settingsIdx = idx;

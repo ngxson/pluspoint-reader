@@ -1,13 +1,13 @@
 #pragma once
 #include <EpdFontFamily.h>
 
+#include <functional>
 #include <string>
 #include <utility>
-#include <functional>
 #include <vector>
-#include <elk.h>
 
-#include "../activities/Activity.h"
+#include "../../activities/Activity.h"
+#include "AppRunner.h"
 
 // hacky solution to avoid changing too much code in main.cpp
 extern std::function<void()> onGoToApps;
@@ -27,8 +27,7 @@ class AppActivity final : public Activity {
   void startProgram(std::string programName);
 
  public:
-  explicit AppActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                            const std::function<void()>& onGoHome)
+  explicit AppActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, const std::function<void()>& onGoHome)
       : Activity("Settings", renderer, mappedInput), onGoHome(onGoHome) {}
   void onEnter() override;
   void onExit() override;
@@ -40,12 +39,4 @@ class AppActivity final : public Activity {
   // state
   std::vector<std::string> programs;
   size_t selectedIdx = 0;
-  struct ProgramContext {
-    bool running = false;
-    bool exited = false;
-    std::string code;
-    std::vector<char> mem;
-    js* jsCtx = nullptr; // note: allocated inside mem, no need free
-  };
-  ProgramContext ctx;
 };
