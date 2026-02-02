@@ -100,7 +100,7 @@ static const JSPropDef js_cp[] = {
 
     /**
      * @brief Display the screen buffer
-     * @param {string} refreshMode The refresh mode to use (0 = CP.FAST_REFRESH, 1 = CP.FULL_REFRESH, etc.)
+     * @param {string} refreshMode The refresh mode to use (CP.FAST_REFRESH, CP.HALF_REFRESH, etc.)
      * @return {void}
      */
     JS_CFUNC_DEF("displayBuffer", 1, js_displayBuffer),

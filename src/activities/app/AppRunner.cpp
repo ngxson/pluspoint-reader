@@ -173,9 +173,21 @@ static JSValue js_clearScreen(JSContext* ctx, JSValue* this_val, int argc, JSVal
 
 static JSValue js_displayBuffer(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) {
   CHECK_ARGC(1);
-  int refreshMode = HalDisplay::FAST_REFRESH;
-  if (JS_ToInt32(ctx, &refreshMode, argv[0])) return JS_EXCEPTION;
-  appInstance().renderer->displayBuffer((HalDisplay::RefreshMode)refreshMode);
+  GET_STRING_ARG(0, modeStr);
+  if (!modeStr) {
+    return JS_EXCEPTION;
+  }
+  HalDisplay::RefreshMode refreshMode;
+  if (strcmp(modeStr, "A") == 0) {
+    refreshMode = HalDisplay::FULL_REFRESH;
+  } else if (strcmp(modeStr, "H") == 0) {
+    refreshMode = HalDisplay::HALF_REFRESH;
+  } else if (strcmp(modeStr, "F") == 0) {
+    refreshMode = HalDisplay::FAST_REFRESH;
+  } else {
+    return JS_ThrowRangeError(ctx, "invalid refresh mode '%s'", modeStr);
+  }
+  appInstance().renderer->displayBuffer(refreshMode);
   return JS_UNDEFINED;
 }
 
