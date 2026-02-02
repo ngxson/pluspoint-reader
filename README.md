@@ -17,6 +17,13 @@ Things that this fork is set out to support:
     - [ ] Add networking APIs
 - [ ] Real-time clock (with calibration to minimize drifting)
 
+## How to install
+
+Adapted from [official guide](https://github.com/crosspoint-reader/crosspoint-reader?tab=readme-ov-file#installing), under **Web (specific firmware version)** section:
+1. Connect the device to computer using USB cable
+2. Download `firmware.bin` from [Releases page of PlusPoint](https://github.com/ngxson/pluspoint-reader/releases)
+3. Go to https://xteink.dve.al/ and flash the firmware file using the "OTA fast flash controls" section --> **Flash firmware from file**
+
 ## Custom JS apps
 
 PlusPoint is shipped with an experimental implementation of user-defined JS apps, powered by [mquickjs](https://github.com/bellard/mquickjs).
