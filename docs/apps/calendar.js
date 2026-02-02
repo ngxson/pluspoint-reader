@@ -6,7 +6,7 @@ var pageHeight = CP.getScreenHeight();
 var boxSize = 68;
 var boxMargin = 2;
 
-// Hard-coded current date: February 2, 2026
+// Hard-coded current month: February, 2026
 var currentYear = 2026;
 var currentMonth = 2; // February
 
@@ -62,7 +62,7 @@ function drawBoxedText(text, x, y, w, h, bg) {
               y + boxMargin,
               w - 2 * boxMargin,
               h - 2 * boxMargin, true);
-  
+
   if (bg === 1) {
     // Gray background - draw light pattern
     for (var py = y + boxMargin; py < y + h - boxMargin; py += 2) {
@@ -71,7 +71,7 @@ function drawBoxedText(text, x, y, w, h, bg) {
       }
     }
   }
-  
+
   var textWidth = CP.getTextWidth(CP.FONT_UI_12, text, CP.TEXT_REGULAR);
   CP.drawText(CP.FONT_UI_12,
               x + (w - textWidth) / 2,
@@ -85,11 +85,11 @@ while (true) {
   if (needsRedraw) {
     needsRedraw = false;
     CP.clearScreen(255);
-    
+
     // Draw title with month and year
     var title = monthNames[currentMonth] + " " + currentYear;
     CP.drawCenteredText(CP.FONT_UI_12, 20, title, true, CP.TEXT_BOLD);
-    
+
     // Draw day headers
     var headerY = 120;
     for (var i = 0; i < 7; i++) {
@@ -138,9 +138,9 @@ while (true) {
         break; // Stop if we've drawn all days and past row 4
       }
     }
-    
-    CP.displayBuffer(CP.FULL_REFRESH);
-    CP.delay(200); // debounce
+
+    CP.displayBuffer(CP.HALF_REFRESH);
+    CP.delay(100); // debounce
   }
 
   if (CP.btnIsPressed(CP.BTN_UP) || CP.btnIsPressed(CP.BTN_LEFT)) {
