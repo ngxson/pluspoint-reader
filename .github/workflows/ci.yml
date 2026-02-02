@@ -6,6 +6,7 @@ name: CI
 
 jobs:
   build:
+    if: false # disabled on this fork
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

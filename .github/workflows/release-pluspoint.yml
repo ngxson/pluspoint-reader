@@ -1,12 +1,11 @@
-name: Compile Release
-# on:
-#   push:
-#     tags:
-#       - '*'
+name: Compile Release (PlusPoint)
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   build-release:
-    if: false # disabled on this fork
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
