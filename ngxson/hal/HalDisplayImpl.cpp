@@ -19,7 +19,7 @@ HalDisplay::HalDisplay() {
 
 HalDisplay::~HalDisplay() {
 #ifndef EMULATED
-  // do nothing
+  einkDisplay.begin();
 #else
   delete[] emuFramebuffer0;
 #endif

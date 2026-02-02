@@ -2,13 +2,17 @@
 #include <real/HalRealImpl.h>
 #include "SDCardManager.h"
 
+#ifndef EMULATED
+#define SdManReal HalRealImpl::SDCardManager::getInstance()
+#endif
+
 SDCardManager SDCardManager::instance;
 
 SDCardManager::SDCardManager() {}
 
 bool SDCardManager::begin() {
 #ifndef EMULATED
-  return SdMan.begin();
+  return SdManReal.begin();
 #else
   // wait for emulation to be ready
   int64_t res = 0;
@@ -24,7 +28,7 @@ bool SDCardManager::begin() {
 
 bool SDCardManager::ready() const {
 #ifndef EMULATED
-  return SdMan.ready();
+  return SdManReal.ready();
 #else
   // no-op
   return true;
@@ -33,7 +37,7 @@ bool SDCardManager::ready() const {
 
 std::vector<String> SDCardManager::listFiles(const char* path, int maxFiles) {
 #ifndef EMULATED
-  return SdMan.listFiles(path, maxFiles);
+  return SdManReal.listFiles(path, maxFiles);
 #else
   Serial.printf("[%lu] [FS ] Emulated listFiles: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -52,7 +56,7 @@ std::vector<String> SDCardManager::listFiles(const char* path, int maxFiles) {
 
 String SDCardManager::readFile(const char* path) {
 #ifndef EMULATED
-  return SdMan.readFile(path);
+  return SdManReal.readFile(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated readFile: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -69,7 +73,7 @@ static int64_t getFileSizeEmulated(const char* path) {
 
 bool SDCardManager::readFileToStream(const char* path, Print& out, size_t chunkSize) {
 #ifndef EMULATED
-  return SdMan.readFileToStream(path, out, chunkSize);
+  return SdManReal.readFileToStream(path, out, chunkSize);
 #else
   Serial.printf("[%lu] [FS ] Emulated readFileToStream: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -96,7 +100,7 @@ bool SDCardManager::readFileToStream(const char* path, Print& out, size_t chunkS
 
 size_t SDCardManager::readFileToBuffer(const char* path, char* buffer, size_t bufferSize, size_t maxBytes) {
 #ifndef EMULATED
-  return SdMan.readFileToBuffer(path, buffer, bufferSize, maxBytes);
+  return SdManReal.readFileToBuffer(path, buffer, bufferSize, maxBytes);
 #else
   Serial.printf("[%lu] [FS ] Emulated readFileToBuffer: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -127,7 +131,7 @@ size_t SDCardManager::readFileToBuffer(const char* path, char* buffer, size_t bu
 
 bool SDCardManager::writeFile(const char* path, const String& content) {
 #ifndef EMULATED
-  return SdMan.writeFile(path, content);
+  return SdManReal.writeFile(path, content);
 #else
   Serial.printf("[%lu] [FS ] Emulated writeFile: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -140,7 +144,7 @@ bool SDCardManager::writeFile(const char* path, const String& content) {
 
 bool SDCardManager::ensureDirectoryExists(const char* path) {
 #ifndef EMULATED
-  return SdMan.ensureDirectoryExists(path);
+  return SdManReal.ensureDirectoryExists(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated ensureDirectoryExists: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -152,7 +156,7 @@ bool SDCardManager::ensureDirectoryExists(const char* path) {
 
 FsFile SDCardManager::open(const char* path, const oflag_t oflag) {
 #ifndef EMULATED
-  return SdMan.open(path, oflag);
+  return SdManReal.open(path, oflag);
 #else
   // TODO: do we need to check existence or create the file?
   return FsFile(path, oflag);
@@ -161,7 +165,7 @@ FsFile SDCardManager::open(const char* path, const oflag_t oflag) {
 
 bool SDCardManager::mkdir(const char* path, const bool pFlag) {
 #ifndef EMULATED
-  return SdMan.mkdir(path, pFlag);
+  return SdManReal.mkdir(path, pFlag);
 #else
   Serial.printf("[%lu] [FS ] Emulated mkdir: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -173,7 +177,7 @@ bool SDCardManager::mkdir(const char* path, const bool pFlag) {
 
 bool SDCardManager::exists(const char* path) {
 #ifndef EMULATED
-  return SdMan.exists(path);
+  return SdManReal.exists(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated exists: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
@@ -183,7 +187,7 @@ bool SDCardManager::exists(const char* path) {
 
 bool SDCardManager::remove(const char* path) {
 #ifndef EMULATED
-  return SdMan.remove(path);
+  return SdManReal.remove(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated remove: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -195,7 +199,7 @@ bool SDCardManager::remove(const char* path) {
 
 bool SDCardManager::rmdir(const char* path) {
 #ifndef EMULATED
-  return SdMan.rmdir(path);
+  return SdManReal.rmdir(path);
 #else
   Serial.printf("[%lu] [FS ] Emulated rmdir: %s\n", millis(), path);
   EmulationUtils::Lock lock;
@@ -207,7 +211,7 @@ bool SDCardManager::rmdir(const char* path) {
 
 bool SDCardManager::openFileForRead(const char* moduleName, const char* path, FsFile& file) {
 #ifndef EMULATED
-  return SdMan.openFileForRead(moduleName, path, file);
+  return SdManReal.openFileForRead(moduleName, path, file);
 #else
   Serial.printf("[%lu] [FS ] Emulated openFileForRead: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
@@ -234,7 +238,7 @@ bool SDCardManager::openFileForRead(const char* moduleName, const String& path, 
 
 bool SDCardManager::openFileForWrite(const char* moduleName, const char* path, FsFile& file) {
 #ifndef EMULATED
-  return SdMan.openFileForWrite(moduleName, path, file);
+  return SdManReal.openFileForWrite(moduleName, path, file);
 #else
   Serial.printf("[%lu] [FS ] Emulated openFileForWrite: %s\n", millis(), path);
   auto size = getFileSizeEmulated(path);
@@ -259,7 +263,7 @@ bool SDCardManager::openFileForWrite(const char* moduleName, const String& path,
 
 bool SDCardManager::removeDir(const char* path) {
 #ifndef EMULATED
-  return SdMan.removeDir(path);
+  return SdManReal.removeDir(path);
 #else
   // to be implemented
   return false;
