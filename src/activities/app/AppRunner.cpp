@@ -2,6 +2,7 @@
 #include "AppRunner.h"
 
 #include <Arduino.h>
+#include <SDCardManager.h>
 
 #include <ctime>
 #include <string>
