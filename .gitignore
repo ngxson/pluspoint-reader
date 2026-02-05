@@ -10,4 +10,10 @@ build
 .sdcard
 *.log
 /compile_commands.json
+
 /.cache
+/lib/mquickjs/*.d
+/lib/mquickjs/*.o
+/lib/mquickjs/mqjs_compile
+/lib/mquickjs/mqjs_stdlib
+

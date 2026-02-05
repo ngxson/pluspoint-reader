@@ -31,7 +31,10 @@
 
 
 // Crosspoint-specific functions (will invoke native C++ code)
-static const JSPropDef js_cp[] = {
+#define CP_FUNC_DEF(name, length, func_name) \
+    JS_CFUNC_DEF(name, length, func_name)
+
+static JSPropDef js_cp[] = {
     JS_PROP_STRING_DEF("FAST_REFRESH", "F", 0),
     JS_PROP_STRING_DEF("HALF_REFRESH", "H", 0),
     JS_PROP_STRING_DEF("FULL_REFRESH", "A", 0),
@@ -56,54 +59,54 @@ static const JSPropDef js_cp[] = {
      * @brief Get the number of milliseconds since the device was powered on
      * @return {number} Milliseconds since power on
      */
-    JS_CFUNC_DEF("millis", 0, js_millis),
+    CP_FUNC_DEF("millis", 0, js_millis),
 
     /**
      * @brief Delay execution for a specified number of milliseconds
      * @param {number} ms The number of milliseconds to delay
      * @return {void}
      */
-    JS_CFUNC_DEF("delay", 1, js_delay),
+    CP_FUNC_DEF("delay", 1, js_delay),
 
     /**
      * @brief Create a buffer of the specified size
      * @param {number} size The size of the buffer to create
      * @return {string} The created buffer
      */
-    JS_CFUNC_DEF("createBuffer", 1, js_createBuffer),
+    CP_FUNC_DEF("createBuffer", 1, js_createBuffer),
 
     /**
      * @brief Check if a button is currently pressed
      * @param {string} buttonId The ID of the button to check (e.g., CP.BTN_BACK, CP.BTN_CONFIRM, etc.)
      * @return {boolean} True if the button is pressed, false otherwise
      */
-    JS_CFUNC_DEF("btnIsPressed", 0, js_btnIsPressed),
+    CP_FUNC_DEF("btnIsPressed", 0, js_btnIsPressed),
 
     /**
      * @brief Get screen width, ben changed based on orientation
      * @return {number} Screen width in pixels
      */
-    JS_CFUNC_DEF("getScreenWidth", 0, js_getScreenWidth),
+    CP_FUNC_DEF("getScreenWidth", 0, js_getScreenWidth),
 
     /**
      * @brief Get screen height, ben changed based on orientation
      * @return {number} Screen height in pixels
      */
-    JS_CFUNC_DEF("getScreenHeight", 0, js_getScreenHeight),
+    CP_FUNC_DEF("getScreenHeight", 0, js_getScreenHeight),
 
     /**
      * @brief Clear the screen buffer
      * @param {number} color The color to clear the screen to (0-255, where 0 = black, 255 = white)
      * @return {void}
      */
-    JS_CFUNC_DEF("clearScreen", 1, js_clearScreen),
+    CP_FUNC_DEF("clearScreen", 1, js_clearScreen),
 
     /**
      * @brief Display the screen buffer
      * @param {string} refreshMode The refresh mode to use (CP.FAST_REFRESH, CP.HALF_REFRESH, etc.)
      * @return {void}
      */
-    JS_CFUNC_DEF("displayBuffer", 1, js_displayBuffer),
+    CP_FUNC_DEF("displayBuffer", 1, js_displayBuffer),
 
     //// FILE SYSTEM FUNCTIONS ////
 
@@ -112,7 +115,7 @@ static const JSPropDef js_cp[] = {
      * @param {string} path The path to the file
      * @return {int} File size in bytes, or -1 if the file does not exist, or -2 if it is a directory
      */
-    JS_CFUNC_DEF("fileStat", 1, js_fileStat),
+    CP_FUNC_DEF("fileStat", 1, js_fileStat),
 
     /**
      * @brief Read the contents of a file
@@ -122,7 +125,7 @@ static const JSPropDef js_cp[] = {
      * @param {int} length The number of bytes to read (if -1: read the entire file)
      * @return {void}
      */
-    JS_CFUNC_DEF("fileRead", 4, js_fileRead),
+    CP_FUNC_DEF("fileRead", 4, js_fileRead),
 
     /**
      * @brief Write data to a file
@@ -132,7 +135,7 @@ static const JSPropDef js_cp[] = {
      * @param {int} length The number of bytes to write
      * @return {void}
      */
-    JS_CFUNC_DEF("fileWrite", 3, js_fileWrite),
+    CP_FUNC_DEF("fileWrite", 3, js_fileWrite),
 
     //// DRAWING FUNCTIONS ////
 
@@ -144,7 +147,7 @@ static const JSPropDef js_cp[] = {
      * @param y2 {number} The y-coordinate of the ending point.
      * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
      */
-    JS_CFUNC_DEF("drawLine", 5, js_drawLine),
+    CP_FUNC_DEF("drawLine", 5, js_drawLine),
 
     /**
      * @brief Draws the outline of a rectangle at the specified position with the given dimensions.
@@ -154,7 +157,7 @@ static const JSPropDef js_cp[] = {
      * @param height {number} The height of the rectangle.
      * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
      */
-    JS_CFUNC_DEF("drawRect", 5, js_drawRect),
+    CP_FUNC_DEF("drawRect", 5, js_drawRect),
 
     /**
      * @brief Fills a rectangle at the specified position with the given dimensions.
@@ -164,7 +167,7 @@ static const JSPropDef js_cp[] = {
      * @param height {number} The height of the rectangle.
      * @param state {boolean} The state to set the pixels to (true for on, false for off). Defaults to true.
      */
-    JS_CFUNC_DEF("fillRect", 5, js_fillRect),
+    CP_FUNC_DEF("fillRect", 5, js_fillRect),
 
     /**
      * @brief Draws a bitmap image at the specified position with the given dimensions.
@@ -174,7 +177,7 @@ static const JSPropDef js_cp[] = {
      * @param width {number} The width of the image.
      * @param height {number} The height of the image.
      */
-    JS_CFUNC_DEF("drawImage", 5, js_drawImage),
+    CP_FUNC_DEF("drawImage", 5, js_drawImage),
 
 
     /**
@@ -183,7 +186,7 @@ static const JSPropDef js_cp[] = {
      * @param text {string} The text to measure.
      * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
      */
-    JS_CFUNC_DEF("getTextWidth", 3, js_getTextWidth),
+    CP_FUNC_DEF("getTextWidth", 3, js_getTextWidth),
 
     /**
      * @brief Draws centered text at the specified y-coordinate (non-wrapped).
@@ -193,7 +196,7 @@ static const JSPropDef js_cp[] = {
      * @param black {boolean} Whether to draw the text in black (true) or white (false).
      * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
      */
-    JS_CFUNC_DEF("drawCenteredText", 5, js_drawCenteredText),
+    CP_FUNC_DEF("drawCenteredText", 5, js_drawCenteredText),
 
     /**
      * @brief Draws text at the specified position (non-wrapped).
@@ -204,9 +207,9 @@ static const JSPropDef js_cp[] = {
      * @param black {boolean} Whether to draw the text in black (true) or white (false).
      * @param style {string} The style of the font (CP.TEXT_REGULAR, CP.TEXT_BOLD, etc.)
      */
-    JS_CFUNC_DEF("drawText", 6, js_drawText),
+    CP_FUNC_DEF("drawText", 6, js_drawText),
 
-    // JS_CFUNC_DEF("drawTextBox", 6, js_drawText), // TODO: implement drawTextBox
+    // CP_FUNC_DEF("drawTextBox", 6, js_drawText), // TODO: implement drawTextBox
 
 
     /**
@@ -217,7 +220,7 @@ static const JSPropDef js_cp[] = {
      * @param btn3Text {string} The text for button 3.
      * @param btn4Text {string} The text for button 4.
      */
-    JS_CFUNC_DEF("drawButtonHints", 5, js_drawButtonHints),
+    CP_FUNC_DEF("drawButtonHints", 5, js_drawButtonHints),
 
     /**
      * @brief Draws side button hints on the left and right sides of the screen.
@@ -225,10 +228,26 @@ static const JSPropDef js_cp[] = {
      * @param topBtnText {string} The text for the top side button.
      * @param bottomBtnText {string} The text for the bottom side button.
      */
-    JS_CFUNC_DEF("drawSideButtonHints", 3, js_drawSideButtonHints),
+    CP_FUNC_DEF("drawSideButtonHints", 3, js_drawSideButtonHints),
 
     JS_PROP_END,
 };
+
+static void handle_cp_func() {
+    JSPropDef *prop = js_cp;
+    FILE *f = fopen("crosspoint_stdlib_stub.h", "w");
+
+    fprintf(f, "#pragma once\n\n");
+    fprintf(f, "#include \"mquickjs.h\"\n");
+    fprintf(f, "#include <stddef.h>\n\n");
+
+    while (prop->def_type != JS_DEF_END) {
+        if (prop->def_type == JS_DEF_CFUNC) {
+            fprintf(f, "static JSValue %s(JSContext* ctx, JSValue* this_val, int argc, JSValue* argv) { return JS_UNDEFINED; }\n", prop->u.func.func_name);
+        }
+        prop++;
+    }
+}
 
 static const JSClassDef js_cp_obj =
     JS_OBJECT_DEF("CP", js_cp);
@@ -609,5 +628,6 @@ static const JSPropDef js_c_function_decl[] = {
 
 int main(int argc, char **argv)
 {
+    handle_cp_func();
     return build_atoms("js_stdlib", js_global_object, js_c_function_decl, argc, argv);
 }

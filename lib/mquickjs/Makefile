@@ -155,4 +155,6 @@ clean:
 # ADDED FOR CROSSPOINT
 mqjs_stdlib.host.o: scripts/crosspoint_stdlib.c
 	$(HOST_CC) $(HOST_CFLAGS) -c -o $@ $<
+mqjs_compile:
+	$(HOST_CC) $(CFLAGS) mquickjs.c mqjs_compile.c cutils.c dtoa.c libm.c -o $@
 # END OF ADDED PART
