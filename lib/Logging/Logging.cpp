@@ -16,7 +16,7 @@ RTC_NOINIT_ATTR size_t logHead = 0;
 RTC_NOINIT_ATTR uint32_t rtcLogMagic;
 static constexpr uint32_t LOG_RTC_MAGIC = 0xDEADBEEF;
 
-void addToLogRingBuffer(const char* message) {
+void addToLogRingBuffer(const char *message) {
   // Add the message to the ring buffer, overwriting old messages if necessary.
   // If the magic is wrong or logHead is out of range (RTC_NOINIT_ATTR garbage
   // on cold boot), clear the entire buffer so subsequent reads are safe.
@@ -30,14 +30,15 @@ void addToLogRingBuffer(const char* message) {
   logHead = (logHead + 1) % MAX_LOG_LINES;
 }
 
-// Since logging can take a large amount of flash, we want to make the format string as short as possible.
-// This logPrintf prepend the timestamp, level and origin to the user-provided message, so that the user only needs to
-// provide the format string for the message itself.
-void logPrintf(const char* level, const char* origin, const char* format, ...) {
+// Since logging can take a large amount of flash, we want to make the format
+// string as short as possible. This logPrintf prepend the timestamp, level and
+// origin to the user-provided message, so that the user only needs to provide
+// the format string for the message itself.
+void logPrintf(const char *level, const char *origin, const char *format, ...) {
   va_list args;
   va_start(args, format);
   char buf[MAX_ENTRY_LEN];
-  char* c = buf;
+  char *c = buf;
   // add timestamp, level and origin
   {
     unsigned long ms = millis();
@@ -85,7 +86,8 @@ std::string getLastLogs() {
 // corruption is detected, in which case rtcLogMagic is still invalid and
 // logMessages may contain garbage. Callers (e.g. HalSystem::begin on the
 // panic-reboot path) must call clearLastLogs() after a true result to fully
-// reinitialize the ring buffer and stamp the magic before getLastLogs() is used.
+// reinitialize the ring buffer and stamp the magic before getLastLogs() is
+// used.
 bool sanitizeLogHead() {
   if (rtcLogMagic != LOG_RTC_MAGIC || logHead >= MAX_LOG_LINES) {
     logHead = 0;

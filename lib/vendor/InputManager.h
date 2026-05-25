@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 class InputManager {
- public:
+public:
   InputManager();
   void begin();
   uint8_t getState();
@@ -14,19 +14,22 @@ class InputManager {
   void update();
 
   /**
-   * Returns true if the button was being held at the time of the last #update() call.
+   * Returns true if the button was being held at the time of the last #update()
+   * call.
    *
    * @param buttonIndex the button indexes
    * @return the button current press state
    */
   bool isPressed(uint8_t buttonIndex) const;
 
- /**
-   * Returns true if the button went from unpressed to pressed between the last two #update() calls.
+  /**
+   * Returns true if the button went from unpressed to pressed between the last
+   * two #update() calls.
    *
-   * This differs from #isPressed() in that pressing and holding a button will cause this function
-   * to return true after the first #update() call, but false on subsequent calls, whereas #isPressed()
-   * will continue to return true.
+   * This differs from #isPressed() in that pressing and holding a button will
+   * cause this function to return true after the first #update() call, but
+   * false on subsequent calls, whereas #isPressed() will continue to return
+   * true.
    *
    * @param buttonIndex
    * @return the button pressed state
@@ -34,14 +37,17 @@ class InputManager {
   bool wasPressed(uint8_t buttonIndex) const;
 
   /**
-   * Returns true if any button started being pressed between the last two #update() calls
+   * Returns true if any button started being pressed between the last two
+   * #update() calls
    *
-   * @return true if any button started being pressed between the last two #update() calls
+   * @return true if any button started being pressed between the last two
+   * #update() calls
    */
   bool wasAnyPressed() const;
 
   /**
-   * Returns true if the button went from pressed to unpressed between the last two #update() calls
+   * Returns true if the button went from pressed to unpressed between the last
+   * two #update() calls
    *
    * @param buttonIndex the button indexes
    * @return the button release state
@@ -49,20 +55,23 @@ class InputManager {
   bool wasReleased(uint8_t buttonIndex) const;
 
   /**
-   * Returns true if any button was released between the last two #update() calls
+   * Returns true if any button was released between the last two #update()
+   * calls
    *
-   * @return  true if any button was released between the last two #update() calls
+   * @return  true if any button was released between the last two #update()
+   * calls
    */
   bool wasAnyReleased() const;
 
   /**
-   * Returns the time between any button starting to be depressed and all buttons between released
+   * Returns the time between any button starting to be depressed and all
+   * buttons between released
    *
    * @return duration in milliseconds
    */
   unsigned long getHeldTime() const;
 
-    /**
+  /**
    * Returns the time the power button has been held
    *
    * @return duration in milliseconds
@@ -87,9 +96,9 @@ class InputManager {
   bool isPowerButtonPressed() const;
 
   // Button names
-  static const char* getButtonName(uint8_t buttonIndex);
+  static const char *getButtonName(uint8_t buttonIndex);
 
- private:
+private:
   int getButtonFromADC(int adcValue, const int ranges[], int numButtons);
 
   uint8_t currentState;
@@ -102,7 +111,6 @@ class InputManager {
   unsigned long powerButtonPressStart;
   unsigned long powerButtonPressFinish;
 
-
   static constexpr int NUM_BUTTONS_1 = 4;
   static const int ADC_RANGES_1[];
 
@@ -112,5 +120,5 @@ class InputManager {
   static constexpr int ADC_NO_BUTTON = 3900;
   static constexpr unsigned long DEBOUNCE_DELAY = 5;
 
-  static const char* BUTTON_NAMES[];
+  static const char *BUTTON_NAMES[];
 };

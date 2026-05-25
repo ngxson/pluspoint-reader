@@ -16,30 +16,33 @@ struct X3ProbeResult {
   bool qmi8658 = false;
 
   uint8_t score() const {
-    return static_cast<uint8_t>(bq27220) + static_cast<uint8_t>(ds3231) + static_cast<uint8_t>(qmi8658);
+    return static_cast<uint8_t>(bq27220) + static_cast<uint8_t>(ds3231) +
+           static_cast<uint8_t>(qmi8658);
   }
 };
 
-bool readI2CReg8(uint8_t addr, uint8_t reg, uint8_t* outValue) {
+bool readI2CReg8(uint8_t addr, uint8_t reg, uint8_t *outValue) {
   Wire.beginTransmission(addr);
   Wire.write(reg);
   if (Wire.endTransmission(false) != 0) {
     return false;
   }
-  if (Wire.requestFrom(addr, static_cast<uint8_t>(1), static_cast<uint8_t>(true)) < 1) {
+  if (Wire.requestFrom(addr, static_cast<uint8_t>(1),
+                       static_cast<uint8_t>(true)) < 1) {
     return false;
   }
   *outValue = Wire.read();
   return true;
 }
 
-bool readI2CReg16LE(uint8_t addr, uint8_t reg, uint16_t* outValue) {
+bool readI2CReg16LE(uint8_t addr, uint8_t reg, uint16_t *outValue) {
   Wire.beginTransmission(addr);
   Wire.write(reg);
   if (Wire.endTransmission(false) != 0) {
     return false;
   }
-  if (Wire.requestFrom(addr, static_cast<uint8_t>(2), static_cast<uint8_t>(true)) < 2) {
+  if (Wire.requestFrom(addr, static_cast<uint8_t>(2),
+                       static_cast<uint8_t>(true)) < 2) {
     while (Wire.available()) {
       Wire.read();
     }
@@ -51,7 +54,7 @@ bool readI2CReg16LE(uint8_t addr, uint8_t reg, uint16_t* outValue) {
   return true;
 }
 
-bool readBQ27220CurrentMA(int16_t* outCurrent) {
+bool readBQ27220CurrentMA(int16_t *outCurrent) {
   uint16_t raw = 0;
   if (!readI2CReg16LE(I2C_ADDR_BQ27220, BQ27220_CUR_REG, &raw)) {
     return false;
@@ -88,10 +91,12 @@ bool probeDS3231Signature() {
 
 bool probeQMI8658Signature() {
   uint8_t whoami = 0;
-  if (readI2CReg8(I2C_ADDR_QMI8658, QMI8658_WHO_AM_I_REG, &whoami) && whoami == QMI8658_WHO_AM_I_VALUE) {
+  if (readI2CReg8(I2C_ADDR_QMI8658, QMI8658_WHO_AM_I_REG, &whoami) &&
+      whoami == QMI8658_WHO_AM_I_VALUE) {
     return true;
   }
-  if (readI2CReg8(I2C_ADDR_QMI8658_ALT, QMI8658_WHO_AM_I_REG, &whoami) && whoami == QMI8658_WHO_AM_I_VALUE) {
+  if (readI2CReg8(I2C_ADDR_QMI8658_ALT, QMI8658_WHO_AM_I_REG, &whoami) &&
+      whoami == QMI8658_WHO_AM_I_VALUE) {
     return true;
   }
   return false;
@@ -112,16 +117,17 @@ X3ProbeResult runX3ProbePass() {
   return result;
 }
 
-}  // namespace X3GPIO
+} // namespace X3GPIO
 
 namespace {
 constexpr char HW_NAMESPACE[] = "cphw";
-constexpr char NVS_KEY_DEV_OVERRIDE[] = "dev_ovr";  // 0=auto, 1=x4, 2=x3
-constexpr char NVS_KEY_DEV_CACHED[] = "dev_det";    // 0=unknown, 1=x4, 2=x3
+constexpr char NVS_KEY_DEV_OVERRIDE[] = "dev_ovr"; // 0=auto, 1=x4, 2=x3
+constexpr char NVS_KEY_DEV_CACHED[] = "dev_det";   // 0=unknown, 1=x4, 2=x3
 
 enum class NvsDeviceValue : uint8_t { Unknown = 0, X4 = 1, X3 = 2 };
 
-NvsDeviceValue readNvsDeviceValue(const char* key, NvsDeviceValue defaultValue) {
+NvsDeviceValue readNvsDeviceValue(const char *key,
+                                  NvsDeviceValue defaultValue) {
   Preferences prefs;
   if (!prefs.begin(HW_NAMESPACE, true)) {
     return defaultValue;
@@ -134,7 +140,7 @@ NvsDeviceValue readNvsDeviceValue(const char* key, NvsDeviceValue defaultValue) 
   return static_cast<NvsDeviceValue>(raw);
 }
 
-void writeNvsDeviceValue(const char* key, NvsDeviceValue value) {
+void writeNvsDeviceValue(const char *key, NvsDeviceValue value) {
   Preferences prefs;
   if (!prefs.begin(HW_NAMESPACE, false)) {
     return;
@@ -144,21 +150,27 @@ void writeNvsDeviceValue(const char* key, NvsDeviceValue value) {
 }
 
 HalGPIO::DeviceType nvsToDeviceType(NvsDeviceValue value) {
-  return value == NvsDeviceValue::X3 ? HalGPIO::DeviceType::X3 : HalGPIO::DeviceType::X4;
+  return value == NvsDeviceValue::X3 ? HalGPIO::DeviceType::X3
+                                     : HalGPIO::DeviceType::X4;
 }
 
 HalGPIO::DeviceType detectDeviceTypeWithFingerprint() {
   // Explicit override for recovery/support:
   // 0 = auto, 1 = force X4, 2 = force X3
-  const NvsDeviceValue overrideValue = readNvsDeviceValue(NVS_KEY_DEV_OVERRIDE, NvsDeviceValue::Unknown);
-  if (overrideValue == NvsDeviceValue::X3 || overrideValue == NvsDeviceValue::X4) {
-    LOG_INF("HW", "Device override active: %s", overrideValue == NvsDeviceValue::X3 ? "X3" : "X4");
+  const NvsDeviceValue overrideValue =
+      readNvsDeviceValue(NVS_KEY_DEV_OVERRIDE, NvsDeviceValue::Unknown);
+  if (overrideValue == NvsDeviceValue::X3 ||
+      overrideValue == NvsDeviceValue::X4) {
+    LOG_INF("HW", "Device override active: %s",
+            overrideValue == NvsDeviceValue::X3 ? "X3" : "X4");
     return nvsToDeviceType(overrideValue);
   }
 
-  const NvsDeviceValue cachedValue = readNvsDeviceValue(NVS_KEY_DEV_CACHED, NvsDeviceValue::Unknown);
+  const NvsDeviceValue cachedValue =
+      readNvsDeviceValue(NVS_KEY_DEV_CACHED, NvsDeviceValue::Unknown);
   if (cachedValue == NvsDeviceValue::X3 || cachedValue == NvsDeviceValue::X4) {
-    LOG_INF("HW", "Using cached device type: %s", cachedValue == NvsDeviceValue::X3 ? "X3" : "X4");
+    LOG_INF("HW", "Using cached device type: %s",
+            cachedValue == NvsDeviceValue::X3 ? "X3" : "X4");
     return nvsToDeviceType(cachedValue);
   }
 
@@ -169,8 +181,11 @@ HalGPIO::DeviceType detectDeviceTypeWithFingerprint() {
 
   const uint8_t score1 = pass1.score();
   const uint8_t score2 = pass2.score();
-  LOG_INF("HW", "X3 probe scores: pass1=%u(bq=%d rtc=%d imu=%d) pass2=%u(bq=%d rtc=%d imu=%d)", score1, pass1.bq27220,
-          pass1.ds3231, pass1.qmi8658, score2, pass2.bq27220, pass2.ds3231, pass2.qmi8658);
+  LOG_INF("HW",
+          "X3 probe scores: pass1=%u(bq=%d rtc=%d imu=%d) pass2=%u(bq=%d "
+          "rtc=%d imu=%d)",
+          score1, pass1.bq27220, pass1.ds3231, pass1.qmi8658, score2,
+          pass2.bq27220, pass2.ds3231, pass2.qmi8658);
   const bool x3Confirmed = (score1 >= 2) && (score2 >= 2);
   const bool x4Confirmed = (score1 == 0) && (score2 == 0);
 
@@ -188,7 +203,7 @@ HalGPIO::DeviceType detectDeviceTypeWithFingerprint() {
   return HalGPIO::DeviceType::X4;
 }
 
-}  // namespace
+} // namespace
 
 void HalGPIO::begin() {
   inputMgr.begin();
@@ -211,43 +226,58 @@ void HalGPIO::update() {
 
 bool HalGPIO::wasUsbStateChanged() const { return usbStateChanged; }
 
-bool HalGPIO::isPressed(uint8_t buttonIndex) const { return inputMgr.isPressed(buttonIndex); }
+bool HalGPIO::isPressed(uint8_t buttonIndex) const {
+  return inputMgr.isPressed(buttonIndex);
+}
 
-bool HalGPIO::wasPressed(uint8_t buttonIndex) const { return inputMgr.wasPressed(buttonIndex); }
+bool HalGPIO::wasPressed(uint8_t buttonIndex) const {
+  return inputMgr.wasPressed(buttonIndex);
+}
 
 bool HalGPIO::wasAnyPressed() const { return inputMgr.wasAnyPressed(); }
 
-bool HalGPIO::wasReleased(uint8_t buttonIndex) const { return inputMgr.wasReleased(buttonIndex); }
+bool HalGPIO::wasReleased(uint8_t buttonIndex) const {
+  return inputMgr.wasReleased(buttonIndex);
+}
 
 bool HalGPIO::wasAnyReleased() const { return inputMgr.wasAnyReleased(); }
 
 unsigned long HalGPIO::getHeldTime() const { return inputMgr.getHeldTime(); }
 
-unsigned long HalGPIO::getPowerButtonHeldTime() const { return inputMgr.getPowerButtonHeldTime(); }
+unsigned long HalGPIO::getPowerButtonHeldTime() const {
+  return inputMgr.getPowerButtonHeldTime();
+}
 
 void HalGPIO::startDeepSleep() {
-  // Ensure that the power button has been released to avoid immediately turning back on if you're holding it
+  // Ensure that the power button has been released to avoid immediately turning
+  // back on if you're holding it
   while (inputMgr.isPressed(BTN_POWER)) {
     delay(50);
     inputMgr.update();
   }
   // Arm the wakeup trigger *after* the button is released
-  esp_deep_sleep_enable_gpio_wakeup(1ULL << InputManager::POWER_BUTTON_PIN, ESP_GPIO_WAKEUP_GPIO_LOW);
+  esp_deep_sleep_enable_gpio_wakeup(1ULL << InputManager::POWER_BUTTON_PIN,
+                                    ESP_GPIO_WAKEUP_GPIO_LOW);
   // Enter Deep Sleep
   esp_deep_sleep_start();
 }
 
-void HalGPIO::verifyPowerButtonWakeup(uint16_t requiredDurationMs, bool shortPressAllowed) {
+void HalGPIO::verifyPowerButtonWakeup(uint16_t requiredDurationMs,
+                                      bool shortPressAllowed) {
   if (shortPressAllowed) {
     // Fast path - no duration check needed
     return;
   }
-  // TODO: Intermittent edge case remains: a single tap followed by another single tap
-  // can still power on the device. Tighten wake debounce/state handling here.
+  // TODO: Intermittent edge case remains: a single tap followed by another
+  // single tap can still power on the device. Tighten wake debounce/state
+  // handling here.
 
-  // Calibrate: subtract boot time already elapsed, assuming button held since boot
+  // Calibrate: subtract boot time already elapsed, assuming button held since
+  // boot
   const uint16_t calibration = millis();
-  const uint16_t calibratedDuration = (calibration < requiredDurationMs) ? (requiredDurationMs - calibration) : 1;
+  const uint16_t calibratedDuration = (calibration < requiredDurationMs)
+                                          ? (requiredDurationMs - calibration)
+                                          : 1;
 
   const auto start = millis();
   inputMgr.update();
@@ -260,7 +290,8 @@ void HalGPIO::verifyPowerButtonWakeup(uint16_t requiredDurationMs, bool shortPre
     do {
       delay(10);
       inputMgr.update();
-    } while (inputMgr.isPressed(BTN_POWER) && inputMgr.getPowerButtonHeldTime() < calibratedDuration);
+    } while (inputMgr.isPressed(BTN_POWER) &&
+             inputMgr.getPowerButtonHeldTime() < calibratedDuration);
     if (inputMgr.getPowerButtonHeldTime() < calibratedDuration) {
       startDeepSleep();
     }
@@ -292,14 +323,18 @@ HalGPIO::WakeupReason HalGPIO::getWakeupReason() const {
 
   const bool usbConnected = isUsbConnected();
 
-  if ((wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED && resetReason == ESP_RST_POWERON && !usbConnected) ||
-      (wakeupCause == ESP_SLEEP_WAKEUP_GPIO && resetReason == ESP_RST_DEEPSLEEP && usbConnected)) {
+  if ((wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED &&
+       resetReason == ESP_RST_POWERON && !usbConnected) ||
+      (wakeupCause == ESP_SLEEP_WAKEUP_GPIO &&
+       resetReason == ESP_RST_DEEPSLEEP && usbConnected)) {
     return WakeupReason::PowerButton;
   }
-  if (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED && resetReason == ESP_RST_UNKNOWN && usbConnected) {
+  if (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED &&
+      resetReason == ESP_RST_UNKNOWN && usbConnected) {
     return WakeupReason::AfterFlash;
   }
-  if (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED && resetReason == ESP_RST_POWERON && usbConnected) {
+  if (wakeupCause == ESP_SLEEP_WAKEUP_UNDEFINED &&
+      resetReason == ESP_RST_POWERON && usbConnected) {
     return WakeupReason::AfterUSBPower;
   }
   return WakeupReason::Other;

@@ -1,6 +1,6 @@
 #include "ActivityManager.h"
-#include "RenderLock.h"
 #include "Activity.h"
+#include "RenderLock.h"
 
 #include <HalPowerManager.h>
 
@@ -8,16 +8,16 @@
 
 void ActivityManager::begin() {
   xTaskCreate(&renderTaskTrampoline, "ActivityManagerRender",
-              8192,              // Stack size
-              this,              // Parameters
-              1,                 // Priority
-              &renderTaskHandle  // Task handle
+              8192,             // Stack size
+              this,             // Parameters
+              1,                // Priority
+              &renderTaskHandle // Task handle
   );
   assert(renderTaskHandle != nullptr && "Failed to create render task");
 }
 
-void ActivityManager::renderTaskTrampoline(void* param) {
-  auto* self = static_cast<ActivityManager*>(param);
+void ActivityManager::renderTaskTrampoline(void *param) {
+  auto *self = static_cast<ActivityManager *>(param);
   self->renderTaskLoop();
 }
 
@@ -25,13 +25,16 @@ void ActivityManager::renderTaskLoop() {
   while (true) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     // Acquire the lock before reading currentActivity to avoid a TOCTOU race
-    // where the main task deletes the activity between the null-check and render().
+    // where the main task deletes the activity between the null-check and
+    // render().
     RenderLock lock;
     if (currentActivity) {
-      HalPowerManager::Lock powerLock;  // Ensure we don't go into low-power mode while rendering
+      HalPowerManager::Lock
+          powerLock; // Ensure we don't go into low-power mode while rendering
       currentActivity->render(std::move(lock));
     }
-    // Notify any task blocked in requestUpdateAndWait() that the render is done.
+    // Notify any task blocked in requestUpdateAndWait() that the render is
+    // done.
     TaskHandle_t waiter = nullptr;
     taskENTER_CRITICAL(nullptr);
     waiter = waitingTaskHandle;
@@ -45,7 +48,8 @@ void ActivityManager::renderTaskLoop() {
 
 void ActivityManager::loop() {
   if (currentActivity) {
-    // Note: do not hold a lock here, the loop() method must be responsible for acquire one if needed
+    // Note: do not hold a lock here, the loop() method must be responsible for
+    // acquire one if needed
     currentActivity->loop();
   }
 
@@ -55,7 +59,8 @@ void ActivityManager::loop() {
 
       if (!currentActivity) {
         // Should never happen in practice
-        LOG_ERR("ACT", "Pop set but currentActivity is null; ignoring pop request");
+        LOG_ERR("ACT",
+                "Pop set but currentActivity is null; ignoring pop request");
         pendingAction = PendingAction::None;
         continue;
       }
@@ -68,22 +73,24 @@ void ActivityManager::loop() {
 
       if (stackActivities.empty()) {
         LOG_DBG("ACT", "No more activities on stack, going home");
-        lock.unlock();  // goHome may acquire its own lock
+        lock.unlock(); // goHome may acquire its own lock
         // goHome(); // TODO
-        continue;  // Will launch goHome immediately
+        continue; // Will launch goHome immediately
 
       } else {
         currentActivity = std::move(stackActivities.back());
         stackActivities.pop_back();
-        LOG_DBG("ACT", "Popped from activity stack, new size = %zu", stackActivities.size());
+        LOG_DBG("ACT", "Popped from activity stack, new size = %zu",
+                stackActivities.size());
         // Handle result if necessary
         if (currentActivity->resultHandler) {
           LOG_DBG("ACT", "Handling result for popped activity");
 
-          // Move it here to avoid the case where handler calling another startActivityForResult()
+          // Move it here to avoid the case where handler calling another
+          // startActivityForResult()
           auto handler = std::move(currentActivity->resultHandler);
           currentActivity->resultHandler = nullptr;
-          lock.unlock();  // Handler may acquire its own lock
+          lock.unlock(); // Handler may acquire its own lock
           handler(std::move(pendingResult));
         }
 
@@ -92,7 +99,8 @@ void ActivityManager::loop() {
           requestUpdate();
         }
 
-        // Handler may request another pending action, we will handle it in the next loop iteration
+        // Handler may request another pending action, we will handle it in the
+        // next loop iteration
         continue;
       }
 
@@ -111,15 +119,17 @@ void ActivityManager::loop() {
       } else if (pendingAction == PendingAction::Push) {
         // Move current activity to stack
         stackActivities.push_back(std::move(currentActivity));
-        LOG_DBG("ACT", "Pushed to activity stack, new size = %zu", stackActivities.size());
+        LOG_DBG("ACT", "Pushed to activity stack, new size = %zu",
+                stackActivities.size());
       }
       pendingAction = PendingAction::None;
       currentActivity = std::move(pendingActivity);
 
-      lock.unlock();  // onEnter may acquire its own lock
+      lock.unlock(); // onEnter may acquire its own lock
       currentActivity->onEnter();
 
-      // onEnter may request another pending action, we will handle it in the next loop iteration
+      // onEnter may request another pending action, we will handle it in the
+      // next loop iteration
       continue;
     }
   }
@@ -134,7 +144,7 @@ void ActivityManager::loop() {
   }
 }
 
-void ActivityManager::exitActivity(const RenderLock& lock) {
+void ActivityManager::exitActivity(const RenderLock &lock) {
   // Note: lock must be held by the caller
   if (currentActivity) {
     currentActivity->onExit();
@@ -142,11 +152,12 @@ void ActivityManager::exitActivity(const RenderLock& lock) {
   }
 }
 
-void ActivityManager::replaceActivity(std::unique_ptr<Activity>&& newActivity) {
-  // Note: no lock here, this is usually called by loop() and we may run into deadlock
+void ActivityManager::replaceActivity(std::unique_ptr<Activity> &&newActivity) {
+  // Note: no lock here, this is usually called by loop() and we may run into
+  // deadlock
   if (currentActivity) {
-    // Defer launch if we're currently in an activity, to avoid deleting the current activity
-    // leading to the "delete this" problem
+    // Defer launch if we're currently in an activity, to avoid deleting the
+    // current activity leading to the "delete this" problem
     pendingActivity = std::move(newActivity);
     pendingAction = PendingAction::Replace;
   } else {
@@ -156,7 +167,7 @@ void ActivityManager::replaceActivity(std::unique_ptr<Activity>&& newActivity) {
   }
 }
 
-void ActivityManager::pushActivity(std::unique_ptr<Activity>&& activity) {
+void ActivityManager::pushActivity(std::unique_ptr<Activity> &&activity) {
   if (pendingActivity) {
     // Should never happen in practice
     LOG_ERR("ACT", "pendingActivity while pushActivity is not expected");
@@ -175,15 +186,21 @@ void ActivityManager::popActivity() {
   pendingAction = PendingAction::Pop;
 }
 
-bool ActivityManager::preventAutoSleep() const { return currentActivity && currentActivity->preventAutoSleep(); }
+bool ActivityManager::preventAutoSleep() const {
+  return currentActivity && currentActivity->preventAutoSleep();
+}
 
 bool ActivityManager::isReaderActivity() const {
   return std::any_of(stackActivities.begin(), stackActivities.end(),
-                     [](const auto& activity) { return activity->isReaderActivity(); }) ||
+                     [](const auto &activity) {
+                       return activity->isReaderActivity();
+                     }) ||
          (currentActivity && currentActivity->isReaderActivity());
 }
 
-bool ActivityManager::skipLoopDelay() const { return currentActivity && currentActivity->skipLoopDelay(); }
+bool ActivityManager::skipLoopDelay() const {
+  return currentActivity && currentActivity->skipLoopDelay();
+}
 
 ScreenshotInfo ActivityManager::getScreenshotInfo() const {
   if (currentActivity) {
@@ -223,11 +240,13 @@ void ActivityManager::requestUpdateAndWait() {
   // Render task cannot call requestUpdateAndWait() or it will cause a deadlock
   assert(!isRenderTask && "Render task cannot call requestUpdateAndWait()");
 
-  // There should never be the case where 2 tasks are waiting for a render at the same time
+  // There should never be the case where 2 tasks are waiting for a render at
+  // the same time
   assert(!alreadyWaiting && "Already waiting for a render to complete");
 
   // Cannot call while holding RenderLock or it will cause a deadlock
-  assert(!holdingRenderLock && "Cannot call requestUpdateAndWait() while holding RenderLock");
+  assert(!holdingRenderLock &&
+         "Cannot call requestUpdateAndWait() while holding RenderLock");
 
   xTaskNotify(renderTaskHandle, 1, eIncrement);
   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
@@ -240,7 +259,7 @@ RenderLock::RenderLock() {
   isLocked = true;
 }
 
-RenderLock::RenderLock([[maybe_unused]] Activity&) {
+RenderLock::RenderLock([[maybe_unused]] Activity &) {
   xSemaphoreTake(activityManager.renderingMutex, portMAX_DELAY);
   isLocked = true;
 }
@@ -266,4 +285,6 @@ void RenderLock::unlock() {
  * @return true if renderingMutex is busy, otherwise false.
  *
  */
-bool RenderLock::peek() { return xQueuePeek(activityManager.renderingMutex, NULL, 0) != pdTRUE; };
+bool RenderLock::peek() {
+  return xQueuePeek(activityManager.renderingMutex, NULL, 0) != pdTRUE;
+};

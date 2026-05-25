@@ -265,7 +265,8 @@ void EInkDisplay::requestResync(uint8_t settlePasses) {
 }
 
 void EInkDisplay::skipInitialResync() {
-  if (!_x3Mode) return;
+  if (!_x3Mode)
+    return;
   _x3InitialFullSyncsRemaining = 0;
   _x3RedRamSynced = true;
 }

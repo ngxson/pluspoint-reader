@@ -9,33 +9,38 @@
 #include <string>
 #include <vector>
 
-class Activity;    // forward declaration
-class RenderLock;  // forward declaration
+class Activity;   // forward declaration
+class RenderLock; // forward declaration
 
 class ScreenshotInfo {}; // stub
 
 /**
  * ActivityManager
  *
- * This mirrors the same concept of Activity in Android, where an activity represents a single screen of the UI. The
- * manager is responsible for launching activities, and ensuring that only one activity is active at a time.
+ * This mirrors the same concept of Activity in Android, where an activity
+ * represents a single screen of the UI. The manager is responsible for
+ * launching activities, and ensuring that only one activity is active at a
+ * time.
  *
- * It also provides a stack mechanism to allow activities to launch sub-activities and get back the results when the
- * sub-activity is done. For example, the WebServer activity can launch a WifiSelect activity to let the user choose a
- * wifi network, and get back the selected network when the user is done.
+ * It also provides a stack mechanism to allow activities to launch
+ * sub-activities and get back the results when the sub-activity is done. For
+ * example, the WebServer activity can launch a WifiSelect activity to let the
+ * user choose a wifi network, and get back the selected network when the user
+ * is done.
  *
  * Main differences from Android's ActivityManager:
  * - No onPause/onResume, since we don't have a concept of background activities
- * - onActivityResult is implemented via a callback instead of a separate method, for simplicity
+ * - onActivityResult is implemented via a callback instead of a separate
+ * method, for simplicity
  */
 class ActivityManager {
   friend class RenderLock;
 
- protected:
+protected:
   std::vector<std::unique_ptr<Activity>> stackActivities;
   std::unique_ptr<Activity> currentActivity;
 
-  void exitActivity(const RenderLock& lock);
+  void exitActivity(const RenderLock &lock);
 
   // Pending activity to be launched on next loop iteration
   std::unique_ptr<Activity> pendingActivity;
@@ -44,11 +49,11 @@ class ActivityManager {
 
   // Task to render and display the activity
   TaskHandle_t renderTaskHandle = nullptr;
-  static void renderTaskTrampoline(void* param);
+  static void renderTaskTrampoline(void *param);
   [[noreturn]] virtual void renderTaskLoop();
 
-  // Set by requestUpdateAndWait(); read and cleared by the render task after render completes.
-  // Note: only one waiting task is supported at a time
+  // Set by requestUpdateAndWait(); read and cleared by the render task after
+  // render completes. Note: only one waiting task is supported at a time
   TaskHandle_t waitingTaskHandle = nullptr;
 
   // Mutex to protect rendering operations from race conditions
@@ -59,7 +64,7 @@ class ActivityManager {
   // This variable must only be set by the main loop, to avoid race conditions
   bool requestedUpdate = false;
 
- public:
+public:
   explicit ActivityManager() : renderingMutex(xSemaphoreCreateMutex()) {
     assert(renderingMutex != nullptr && "Failed to create rendering mutex");
     stackActivities.reserve(10);
@@ -70,10 +75,10 @@ class ActivityManager {
   void loop();
 
   // Will replace currentActivity and drop all activities on stack
-  void replaceActivity(std::unique_ptr<Activity>&& newActivity);
+  void replaceActivity(std::unique_ptr<Activity> &&newActivity);
 
   // This will move current activity to stack instead of deleting it
-  void pushActivity(std::unique_ptr<Activity>&& activity);
+  void pushActivity(std::unique_ptr<Activity> &&activity);
 
   // Remove the currentActivity, returning the last one on stack
   // Note: if popActivity() on last activity on the stack, we will goHome()
@@ -93,4 +98,4 @@ class ActivityManager {
   void requestUpdateAndWait();
 };
 
-extern ActivityManager activityManager;  // singleton, to be defined in main.cpp
+extern ActivityManager activityManager; // singleton, to be defined in main.cpp

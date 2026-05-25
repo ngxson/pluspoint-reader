@@ -17,12 +17,13 @@ RTC_NOINIT_ATTR HalSystem::StackFrame panicStack[MAX_PANIC_STACK_DEPTH];
 
 extern "C" {
 
-void __real_panic_abort(const char* message);
-void __real_panic_print_backtrace(const void* frame, int core);
+void __real_panic_abort(const char *message);
+void __real_panic_print_backtrace(const void *frame, int core);
 
 static DRAM_ATTR const char PANIC_REASON_UNKNOWN[] = "(unknown panic reason)";
-void IRAM_ATTR __wrap_panic_abort(const char* message) {
-  if (!message) message = PANIC_REASON_UNKNOWN;
+void IRAM_ATTR __wrap_panic_abort(const char *message) {
+  if (!message)
+    message = PANIC_REASON_UNKNOWN;
   // IRAM-safe bounded copy (strncpy is not IRAM-safe in panic context)
   int i = 0;
   for (; i < (int)sizeof(panicMessage) - 1 && message[i]; i++) {
@@ -33,7 +34,7 @@ void IRAM_ATTR __wrap_panic_abort(const char* message) {
   __real_panic_abort(message);
 }
 
-void IRAM_ATTR __wrap_panic_print_backtrace(const void* frame, int core) {
+void IRAM_ATTR __wrap_panic_print_backtrace(const void *frame, int core) {
   if (!frame) {
     __real_panic_print_backtrace(frame, core);
     return;
@@ -43,11 +44,11 @@ void IRAM_ATTR __wrap_panic_print_backtrace(const void* frame, int core) {
   }
 
   // Copied from components/esp_system/port/arch/riscv/panic_arch.c
-  uint32_t sp = (uint32_t)((RvExcFrame*)frame)->sp;
+  uint32_t sp = (uint32_t)((RvExcFrame *)frame)->sp;
   const int per_line = 8;
   int depth = 0;
   for (int x = 0; x < 1024; x += per_line * sizeof(uint32_t)) {
-    uint32_t* spp = (uint32_t*)(sp + x);
+    uint32_t *spp = (uint32_t *)(sp + x);
     // panic_print_hex(sp + x);
     // panic_print_str(": ");
     panicStack[depth].sp = sp + x;
@@ -71,9 +72,10 @@ void IRAM_ATTR __wrap_panic_print_backtrace(const void* frame, int core) {
 namespace HalSystem {
 
 void begin() {
-  // This is mostly for the first boot, we need to initialize the panic info and logs to empty state
-  // If we reboot from a panic state, we want to keep the panic info until we successfully dump it to the SD card, use
-  // `clearPanic()` to clear it after dumping
+  // This is mostly for the first boot, we need to initialize the panic info and
+  // logs to empty state If we reboot from a panic state, we want to keep the
+  // panic info until we successfully dump it to the SD card, use `clearPanic()`
+  // to clear it after dumping
   if (!isRebootFromPanic()) {
     clearPanic();
   } else {
@@ -145,4 +147,4 @@ bool isRebootFromPanic() {
   return resetReason == ESP_RST_PANIC || resetReason == ESP_RST_CPU_LOCKUP;
 }
 
-}  // namespace HalSystem
+} // namespace HalSystem

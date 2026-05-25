@@ -2,7 +2,7 @@
 
 #include <Logging.h>
 
-HalTiltSensor halTiltSensor;  // Singleton instance
+HalTiltSensor halTiltSensor; // Singleton instance
 
 bool HalTiltSensor::writeReg(uint8_t reg, uint8_t val) const {
   Wire.beginTransmission(_i2cAddr);
@@ -11,7 +11,7 @@ bool HalTiltSensor::writeReg(uint8_t reg, uint8_t val) const {
   return Wire.endTransmission() == 0;
 }
 
-bool HalTiltSensor::readReg(uint8_t reg, uint8_t* val) const {
+bool HalTiltSensor::readReg(uint8_t reg, uint8_t *val) const {
   Wire.beginTransmission(_i2cAddr);
   Wire.write(reg);
   if (Wire.endTransmission(false) != 0) {
@@ -25,9 +25,9 @@ bool HalTiltSensor::readReg(uint8_t reg, uint8_t* val) const {
   return true;
 }
 
-bool HalTiltSensor::readGyro(float& gx, float& gy, float& gz) const {
+bool HalTiltSensor::readGyro(float &gx, float &gy, float &gz) const {
   Wire.beginTransmission(_i2cAddr);
-  Wire.write(REG_GX_L);  // Start reading at Gyro X Low
+  Wire.write(REG_GX_L); // Start reading at Gyro X Low
   if (Wire.endTransmission(false) != 0) {
     return false;
   }
@@ -60,9 +60,11 @@ void HalTiltSensor::begin() {
   // Try primary address, then alternate
   uint8_t whoami = 0;
   _i2cAddr = I2C_ADDR_QMI8658;
-  if (!readReg(QMI8658_WHO_AM_I_REG, &whoami) || whoami != QMI8658_WHO_AM_I_VALUE) {
+  if (!readReg(QMI8658_WHO_AM_I_REG, &whoami) ||
+      whoami != QMI8658_WHO_AM_I_VALUE) {
     _i2cAddr = I2C_ADDR_QMI8658_ALT;
-    if (!readReg(QMI8658_WHO_AM_I_REG, &whoami) || whoami != QMI8658_WHO_AM_I_VALUE) {
+    if (!readReg(QMI8658_WHO_AM_I_REG, &whoami) ||
+        whoami != QMI8658_WHO_AM_I_VALUE) {
       LOG_ERR("GYR", "QMI8658 IMU not found");
       _available = false;
       return;
@@ -71,7 +73,8 @@ void HalTiltSensor::begin() {
 
   LOG_INF("GYR", "QMI8658 IMU found at 0x%02X", _i2cAddr);
 
-  if (!writeReg(REG_CTRL7, CTRL7_DISABLE_ALL) || !writeReg(REG_CTRL3, CTRL3_FS_512DPS | CTRL3_ODR_28HZ) ||
+  if (!writeReg(REG_CTRL7, CTRL7_DISABLE_ALL) ||
+      !writeReg(REG_CTRL3, CTRL3_FS_512DPS | CTRL3_ODR_28HZ) ||
       !writeReg(REG_CTRL1, CTRL1_BASE | CTRL1_SENSOR_DISABLE)) {
     LOG_ERR("GYR", "QMI8658 register configuration failed");
     _available = false;
@@ -94,7 +97,8 @@ bool HalTiltSensor::wake() {
     return false;
   }
 
-  if (writeReg(REG_CTRL1, CTRL1_BASE) && writeReg(REG_CTRL7, CTRL7_GYRO_ENABLE)) {
+  if (writeReg(REG_CTRL1, CTRL1_BASE) &&
+      writeReg(REG_CTRL7, CTRL7_GYRO_ENABLE)) {
     _lastPollMs = millis();
     _lastTiltMs = millis();
     _wakeMs = millis();
@@ -115,7 +119,8 @@ bool HalTiltSensor::deepSleep() {
     return false;
   }
 
-  if (writeReg(REG_CTRL7, CTRL7_DISABLE_ALL) && writeReg(REG_CTRL1, CTRL1_BASE | CTRL1_SENSOR_DISABLE)) {
+  if (writeReg(REG_CTRL7, CTRL7_DISABLE_ALL) &&
+      writeReg(REG_CTRL1, CTRL1_BASE | CTRL1_SENSOR_DISABLE)) {
     // Clear any residual state so it doesn't immediately trigger upon waking
     clearPendingEvents();
     _inTilt = false;
@@ -127,7 +132,8 @@ bool HalTiltSensor::deepSleep() {
   }
 }
 
-void HalTiltSensor::update(const uint8_t mode, const uint8_t orientation, const bool inReader) {
+void HalTiltSensor::update(const uint8_t mode, const uint8_t orientation,
+                           const bool inReader) {
   if (!_available) {
     return;
   }
@@ -141,7 +147,8 @@ void HalTiltSensor::update(const uint8_t mode, const uint8_t orientation, const 
     return;
   }
 
-  // If disabled, skip the rest of the polling logic and avoid unnecessary I2C traffic in non-reader activities
+  // If disabled, skip the rest of the polling logic and avoid unnecessary I2C
+  // traffic in non-reader activities
   if ((mode == CrossPointTiltPageTurn::TILT_OFF) || !inReader) {
     return;
   }
@@ -163,24 +170,25 @@ void HalTiltSensor::update(const uint8_t mode, const uint8_t orientation, const 
   }
 
   // Map the gyro axis to left/right tilt based on reader orientation.
-  // On the X3 PCB: X axis = left/right in portrait, Y axis = left/right in landscape.
+  // On the X3 PCB: X axis = left/right in portrait, Y axis = left/right in
+  // landscape.
   float tiltAxis;
   switch (orientation) {
-    case CrossPointOrientation::PORTRAIT:
-      tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? -gx : gx;
-      break;
-    case CrossPointOrientation::INVERTED:
-      tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? gx : -gx;
-      break;
-    case CrossPointOrientation::LANDSCAPE_CW:
-      tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? gy : -gy;
-      break;
-    case CrossPointOrientation::LANDSCAPE_CCW:
-      tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? -gy : gy;
-      break;
-    default:
-      tiltAxis = gx;
-      break;
+  case CrossPointOrientation::PORTRAIT:
+    tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? -gx : gx;
+    break;
+  case CrossPointOrientation::INVERTED:
+    tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? gx : -gx;
+    break;
+  case CrossPointOrientation::LANDSCAPE_CW:
+    tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? gy : -gy;
+    break;
+  case CrossPointOrientation::LANDSCAPE_CCW:
+    tiltAxis = mode == CrossPointTiltPageTurn::TILT_INVERTED ? -gy : gy;
+    break;
+  default:
+    tiltAxis = gx;
+    break;
   }
 
   if (_inTilt) {
@@ -230,5 +238,6 @@ void HalTiltSensor::clearPendingEvents() {
   _tiltForwardEvent = false;
   _tiltBackEvent = false;
   _hadActivity = false;
-  // Intentionally preserve _inTilt so a held tilt doesn't retrigger on next poll
+  // Intentionally preserve _inTilt so a held tilt doesn't retrigger on next
+  // poll
 }

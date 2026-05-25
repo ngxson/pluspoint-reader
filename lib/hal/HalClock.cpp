@@ -7,14 +7,16 @@
 
 #include <cassert>
 
-HalClock halClock;  // Singleton instance
+HalClock halClock; // Singleton instance
 
 // DS3231 register layout (BCD encoded):
 //   0x00: Seconds  (bits 6-4 = tens, bits 3-0 = ones)
 //   0x01: Minutes  (bits 6-4 = tens, bits 3-0 = ones)
 //   0x02: Hours    (bit 6 = 12/24 mode, bits 5-4 = tens, bits 3-0 = ones)
 
-static uint8_t bcdToDec(uint8_t bcd) { return ((bcd >> 4) * 10) + (bcd & 0x0F); }
+static uint8_t bcdToDec(uint8_t bcd) {
+  return ((bcd >> 4) * 10) + (bcd & 0x0F);
+}
 static uint8_t decToBcd(uint8_t dec) { return ((dec / 10) << 4) | (dec % 10); }
 
 void HalClock::begin() {
@@ -37,7 +39,7 @@ void HalClock::begin() {
     _available = false;
     return;
   }
-  Wire.read();  // discard — just testing connectivity
+  Wire.read(); // discard — just testing connectivity
 
   _available = true;
   LOG_INF("CLK", "DS3231 RTC found");
@@ -47,8 +49,9 @@ void HalClock::begin() {
   getTime(h, m);
 }
 
-bool HalClock::getTime(uint8_t& hour, uint8_t& minute) const {
-  if (!_available) return false;
+bool HalClock::getTime(uint8_t &hour, uint8_t &minute) const {
+  if (!_available)
+    return false;
 
   const unsigned long now = millis();
   if (_lastPollMs != 0 && (now - _lastPollMs) < CLOCK_POLL_MS) {
@@ -61,7 +64,8 @@ bool HalClock::getTime(uint8_t& hour, uint8_t& minute) const {
   Wire.beginTransmission(I2C_ADDR_DS3231);
   Wire.write(DS3231_SEC_REG);
   if (Wire.endTransmission(false) != 0) {
-    if (!_hasCachedTime) return false;
+    if (!_hasCachedTime)
+      return false;
     _lastPollMs = now;
     hour = _cachedHour;
     minute = _cachedMinute;
@@ -69,14 +73,15 @@ bool HalClock::getTime(uint8_t& hour, uint8_t& minute) const {
   }
   Wire.requestFrom(I2C_ADDR_DS3231, (uint8_t)3);
   if (Wire.available() < 3) {
-    if (!_hasCachedTime) return false;
+    if (!_hasCachedTime)
+      return false;
     _lastPollMs = now;
     hour = _cachedHour;
     minute = _cachedMinute;
     return true;
   }
 
-  Wire.read();  // seconds — not needed
+  Wire.read(); // seconds — not needed
   const uint8_t rawMin = Wire.read();
   const uint8_t rawHour = Wire.read();
 
@@ -86,7 +91,8 @@ bool HalClock::getTime(uint8_t& hour, uint8_t& minute) const {
     // 12h mode: bit 5 = PM, bits 4-0 = hours (1-12)
     uint8_t h12 = bcdToDec(rawHour & 0x1F);
     bool pm = rawHour & 0x20;
-    if (h12 == 12) h12 = 0;
+    if (h12 == 12)
+      h12 = 0;
     _cachedHour = pm ? (h12 + 12) : h12;
   } else {
     // 24h mode: bits 5-0 = hours (0-23)
@@ -100,16 +106,23 @@ bool HalClock::getTime(uint8_t& hour, uint8_t& minute) const {
   return true;
 }
 
-bool HalClock::formatTime(char* buf, size_t bufSize, uint8_t utcOffsetQuarterHoursBiased, bool use12Hour) const {
-  if (bufSize < (use12Hour ? 9u : 6u)) return false;
+bool HalClock::formatTime(char *buf, size_t bufSize,
+                          uint8_t utcOffsetQuarterHoursBiased,
+                          bool use12Hour) const {
+  if (bufSize < (use12Hour ? 9u : 6u))
+    return false;
   uint8_t h, m;
-  if (!getTime(h, m)) return false;
+  if (!getTime(h, m))
+    return false;
 
   // Apply UTC offset: convert biased value to signed quarter-hours.
-  // Clamp against corrupted persisted values so display time can't drift outside [-12:00, +14:00].
-  if (utcOffsetQuarterHoursBiased > 104) utcOffsetQuarterHoursBiased = 104;
+  // Clamp against corrupted persisted values so display time can't drift
+  // outside [-12:00, +14:00].
+  if (utcOffsetQuarterHoursBiased > 104)
+    utcOffsetQuarterHoursBiased = 104;
   int offsetQuarterHours = static_cast<int>(utcOffsetQuarterHoursBiased) - 48;
-  int totalMinutes = static_cast<int>(h) * 60 + static_cast<int>(m) + offsetQuarterHours * 15;
+  int totalMinutes =
+      static_cast<int>(h) * 60 + static_cast<int>(m) + offsetQuarterHours * 15;
 
   // Wrap around 24 hours
   totalMinutes = ((totalMinutes % 1440) + 1440) % 1440;
@@ -119,7 +132,8 @@ bool HalClock::formatTime(char* buf, size_t bufSize, uint8_t utcOffsetQuarterHou
   if (use12Hour) {
     const bool pm = hour24 >= 12;
     int hour12 = hour24 % 12;
-    if (hour12 == 0) hour12 = 12;
+    if (hour12 == 0)
+      hour12 = 12;
     snprintf(buf, bufSize, "%d:%02d %s", hour12, min, pm ? "PM" : "AM");
   } else {
     snprintf(buf, bufSize, "%02d:%02d", hour24, min);
@@ -132,10 +146,10 @@ bool HalClock::writeTimeToRTC(uint8_t hour, uint8_t minute, uint8_t second) {
   assert(minute < 60);
   assert(second < 60);
   Wire.beginTransmission(I2C_ADDR_DS3231);
-  Wire.write(DS3231_SEC_REG);    // Start at register 0x00
-  Wire.write(decToBcd(second));  // 0x00: Seconds
-  Wire.write(decToBcd(minute));  // 0x01: Minutes
-  Wire.write(decToBcd(hour));    // 0x02: Hours (24h mode, bit 6 = 0)
+  Wire.write(DS3231_SEC_REG);   // Start at register 0x00
+  Wire.write(decToBcd(second)); // 0x00: Seconds
+  Wire.write(decToBcd(minute)); // 0x01: Minutes
+  Wire.write(decToBcd(hour));   // 0x02: Hours (24h mode, bit 6 = 0)
   if (Wire.endTransmission() != 0) {
     LOG_ERR("CLK", "Failed to write time to DS3231");
     return false;
@@ -150,7 +164,8 @@ bool HalClock::writeTimeToRTC(uint8_t hour, uint8_t minute, uint8_t second) {
 }
 
 bool HalClock::syncFromNTP() {
-  if (!_available) return false;
+  if (!_available)
+    return false;
 
   if (WiFi.status() != WL_CONNECTED) {
     LOG_ERR("CLK", "WiFi not connected, cannot sync NTP");
@@ -169,7 +184,8 @@ bool HalClock::syncFromNTP() {
       gmtime_r(&now, &timeinfo);
 
       if (writeTimeToRTC(timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec)) {
-        LOG_INF("CLK", "RTC set to %02d:%02d:%02d UTC", timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+        LOG_INF("CLK", "RTC set to %02d:%02d:%02d UTC", timeinfo.tm_hour,
+                timeinfo.tm_min, timeinfo.tm_sec);
         return true;
       }
       return false;
