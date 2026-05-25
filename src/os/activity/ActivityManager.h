@@ -1,8 +1,10 @@
 #pragma once
 
+#ifndef SIMULATOR
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
+#endif
 
 #include <cassert>
 #include <memory>
@@ -10,6 +12,7 @@
 #include <vector>
 
 class Activity;   // forward declaration
+class Graphic;    // forward declaration
 class RenderLock; // forward declaration
 
 class ScreenshotInfo {}; // stub
@@ -70,6 +73,8 @@ public:
     stackActivities.reserve(10);
   }
   ~ActivityManager() { assert(false); /* should never be called */ };
+
+  static Graphic& getGraphic();
 
   void begin();
   void loop();

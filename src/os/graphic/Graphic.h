@@ -2,7 +2,7 @@
 
 #include <EpdFontFamily.h>
 #include <FontDecompressor.h>
-#include <HalDisplay.h>
+#include <os/hw/Display.h>
 
 struct BoxOpts {
   struct Border {
@@ -23,8 +23,21 @@ struct TextOpts {
 
 class Graphic {
  public:
-  explicit Graphic(HalDisplay& display) : display(display) {}
+  // Mirrors GfxRenderer::Orientation — logical screen orientation from caller's perspective
+  enum Orientation {
+    Portrait,                  // 480x800 logical (90° CW from physical panel) — device default
+    LandscapeClockwise,        // 800x480 logical, 180° from panel
+    PortraitInverted,          // 480x800 logical, 90° CCW from panel
+    LandscapeCounterClockwise, // 800x480 logical, native panel orientation
+  };
+
+  explicit Graphic(Display& display) : display(display) {}
   ~Graphic() = default;
+
+  static Graphic& getInstance();
+
+  void setOrientation(Orientation o);
+  Orientation getOrientation() const;
 
   int getWidth() const;
   int getHeight() const;
@@ -36,7 +49,8 @@ class Graphic {
   int getAscender(const EpdFontFamily& font) const;
 
  private:
-  HalDisplay& display;
+  Display& display;
+  Orientation orientation = Portrait;
   mutable FontDecompressor decompressor;
 
   void drawPixel(int x, int y, bool black) const;

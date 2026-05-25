@@ -1,0 +1,6 @@
+{
+  "name": "sim",
+  "version": "0.0.1",
+  "description": "Arduino API stubs for simulator builds",
+  "platforms": ["native"]
+}

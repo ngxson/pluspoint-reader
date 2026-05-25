@@ -1,19 +1,70 @@
 #include "Graphic.h"
 
 #include <os/internal.h>
+#include <os/hw/Display.h>
 #include <EpdFontData.h>
 #include <Utf8.h>
 
-int Graphic::getWidth() const { return display.getDisplayWidth(); }
-int Graphic::getHeight() const { return display.getDisplayHeight(); }
+Graphic& Graphic::getInstance() {
+  static Graphic instance(Display::getInstance());
+  return instance;
+}
+
+void Graphic::setOrientation(Orientation o) { orientation = o; }
+Graphic::Orientation Graphic::getOrientation() const { return orientation; }
+
+// Translate logical (x,y) to physical panel coordinates — mirrors GfxRenderer::rotateCoordinates
+static inline void rotateCoordinates(Graphic::Orientation orientation, int x, int y,
+                                     int* phyX, int* phyY,
+                                     uint16_t panelW, uint16_t panelH) {
+  switch (orientation) {
+    case Graphic::Portrait:
+      *phyX = y;
+      *phyY = panelH - 1 - x;
+      break;
+    case Graphic::LandscapeClockwise:
+      *phyX = panelW - 1 - x;
+      *phyY = panelH - 1 - y;
+      break;
+    case Graphic::PortraitInverted:
+      *phyX = panelW - 1 - y;
+      *phyY = x;
+      break;
+    case Graphic::LandscapeCounterClockwise:
+      *phyX = x;
+      *phyY = y;
+      break;
+  }
+}
+
+int Graphic::getWidth() const {
+  switch (orientation) {
+    case Portrait:
+    case PortraitInverted:          return display.getHeight();
+    case LandscapeClockwise:
+    case LandscapeCounterClockwise: return display.getWidth();
+  }
+  return display.getWidth();
+}
+
+int Graphic::getHeight() const {
+  switch (orientation) {
+    case Portrait:
+    case PortraitInverted:          return display.getWidth();
+    case LandscapeClockwise:
+    case LandscapeCounterClockwise: return display.getHeight();
+  }
+  return display.getHeight();
+}
 
 void Graphic::drawPixel(int x, int y, bool black) const {
-  const uint16_t w = display.getDisplayWidth();
-  const uint16_t h = display.getDisplayHeight();
-  if (x < 0 || x >= w || y < 0 || y >= h) return;
+  if (x < 0 || x >= getWidth() || y < 0 || y >= getHeight()) return;
 
-  const uint32_t byteIndex = static_cast<uint32_t>(y) * display.getDisplayWidthBytes() + (x / 8);
-  const uint8_t bitPos = 7 - (x % 8);  // MSB first; 0 = black on E-Ink
+  int phyX, phyY;
+  rotateCoordinates(orientation, x, y, &phyX, &phyY, display.getWidth(), display.getHeight());
+
+  const uint32_t byteIndex = static_cast<uint32_t>(phyY) * display.getWidthBytes() + (phyX / 8);
+  const uint8_t bitPos = 7 - (phyX % 8);  // MSB first; 0 = black on E-Ink
 
   uint8_t* fb = display.getFrameBuffer();
   if (black) {

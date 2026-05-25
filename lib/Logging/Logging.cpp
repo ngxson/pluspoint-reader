@@ -1,5 +1,7 @@
 #include "Logging.h"
 
+#ifndef SIMULATOR
+
 #include <string>
 
 #define MAX_ENTRY_LEN 256
@@ -103,3 +105,5 @@ void clearLastLogs() {
   logHead = 0;
   rtcLogMagic = LOG_RTC_MAGIC;
 }
+
+#endif  // SIMULATOR

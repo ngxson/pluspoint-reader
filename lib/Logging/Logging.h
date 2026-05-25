@@ -1,62 +1,35 @@
 #pragma once
 
+#ifdef SIMULATOR
+
+#include <cstdio>
+#include <string>
+
+#define LOG_ERR(origin, fmt, ...) fprintf(stderr, "[ERR] [" origin "] " fmt "\n", ##__VA_ARGS__)
+#define LOG_INF(origin, fmt, ...) fprintf(stderr, "[INF] [" origin "] " fmt "\n", ##__VA_ARGS__)
+#define LOG_DBG(origin, fmt, ...) fprintf(stderr, "[DBG] [" origin "] " fmt "\n", ##__VA_ARGS__)
+
+inline std::string getLastLogs() { return {}; }
+inline void clearLastLogs() {}
+inline bool sanitizeLogHead() { return false; }
+
+#else  // ---- ESP32 / Arduino ----
+
 #include <HardwareSerial.h>
 
 #include <string>
 
-/*
-Define ENABLE_SERIAL_LOG to enable logging
-Can be set in platformio.ini build_flags or as a compile definition
-
-Define LOG_LEVEL to control log verbosity:
-0 = ERR only
-1 = ERR + INF
-2 = ERR + INF + DBG
-If not defined, defaults to 0
-
-If you have a legitimate need for raw Serial access (e.g., binary data,
-special formatting), use the underlying logSerial object directly:
-    logSerial.printf("Special case: %d\n", value);
-    logSerial.write(binaryData, length);
-
-The logSerial reference (defined below) points to the real Serial object and
-won't trigger deprecation warnings.
-*/
-
-#ifndef LOG_LEVEL
-#define LOG_LEVEL 0
-#endif
-
+// For raw Serial access (e.g., binary data), use logSerial directly.
 static HWCDC &logSerial = Serial;
 
 void logPrintf(const char *level, const char *origin, const char *format, ...);
 
-#ifdef ENABLE_SERIAL_LOG
-#if LOG_LEVEL >= 0
 #define LOG_ERR(origin, format, ...)                                           \
   logPrintf("ERR", origin, format "\n", ##__VA_ARGS__)
-#else
-#define LOG_ERR(origin, format, ...)
-#endif
-
-#if LOG_LEVEL >= 1
 #define LOG_INF(origin, format, ...)                                           \
   logPrintf("INF", origin, format "\n", ##__VA_ARGS__)
-#else
-#define LOG_INF(origin, format, ...)
-#endif
-
-#if LOG_LEVEL >= 2
 #define LOG_DBG(origin, format, ...)                                           \
   logPrintf("DBG", origin, format "\n", ##__VA_ARGS__)
-#else
-#define LOG_DBG(origin, format, ...)
-#endif
-#else
-#define LOG_DBG(origin, format, ...)
-#define LOG_ERR(origin, format, ...)
-#define LOG_INF(origin, format, ...)
-#endif
 
 std::string getLastLogs();
 void clearLastLogs();
@@ -87,3 +60,5 @@ public:
 #undef Serial
 #endif
 #define Serial MySerialImpl::instance
+
+#endif  // SIMULATOR

@@ -2,6 +2,10 @@
 #include "Activity.h"
 #include "RenderLock.h"
 
+#include <os/graphic/Graphic.h>
+
+Graphic& ActivityManager::getGraphic() { return Graphic::getInstance(); }
+
 #include <HalPowerManager.h>
 
 #include <algorithm>
