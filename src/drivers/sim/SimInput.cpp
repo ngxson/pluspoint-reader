@@ -12,7 +12,7 @@ SDL_Scancode SimInput::toScancode(Button button) {
     case Button::Right:       return SDL_SCANCODE_RIGHT;
     case Button::Up:          return SDL_SCANCODE_UP;
     case Button::Down:        return SDL_SCANCODE_DOWN;
-    case Button::Power:       return SDL_SCANCODE_P;
+    case Button::Power:       return SDL_SCANCODE_ESCAPE;
     case Button::PageBack:    return SDL_SCANCODE_PAGEUP;
     case Button::PageForward: return SDL_SCANCODE_PAGEDOWN;
     default:                  return SDL_SCANCODE_UNKNOWN;

@@ -1,41 +1,64 @@
-#ifdef SIMULATOR
-
-#include <os/os.h>
 #include <os/graphic/Fonts.h>
 #include <os/graphic/Graphic.h>
-#include <drivers/sim/SimDisplay.h>
+#include <os/hw/Display.h>
+#include <os/hw/Input.h>
+#include <os/os.h>
 
-int main() {
+#ifdef SIMULATOR
+#include <drivers/sim/SimDisplay.h>
+#endif
+
+#ifndef SIMULATOR
+#include <Arduino.h>
+#endif
+
+void setup() {
   Os::boot();
   Graphic& g = Graphic::getInstance();
-  SimDisplay& simDisplay = static_cast<SimDisplay&>(Display::getInstance());
-
-  // Clear to white
   g.drawBox(0, 0, g.getWidth(), g.getHeight(), BoxOpts{.fill = true, .black = false});
-
-  // Draw "Hello, World!" centered
-  const EpdFontFamily& font = getFontFamilyById(NOTOSANS_18_FONT_ID);
-  const char* text = "Hello, World!";
-  const TextOpts opts{.font = &font};
-  const int tw = g.getTextWidth(text, opts);
-  const int th = g.getLineHeight(font);
-  const int x = (g.getWidth() - tw) / 2;
-  const int y = (g.getHeight() - th) / 2;
-  g.drawText(text, x, y, opts);
-
-  simDisplay.displayBuffer();
-
-  while (!simDisplay.shouldClose()) {
-    simDisplay.pollEvents();
-  }
-
-  return 0;
+  Display::getInstance().displayBuffer();
 }
 
-#else  // ESP32
+void loop() {
+  Input& input = Input::getInstance();
 
-#include <Arduino.h>
-void setup() {}
-void loop() {}
+#ifdef SIMULATOR
+  static_cast<SimDisplay&>(Display::getInstance()).pollEvents();
+#endif
 
+  input.update();
+
+  const char* key = nullptr;
+  if (input.wasPressed(Input::Button::Up))    key = "Up";
+  if (input.wasPressed(Input::Button::Down))  key = "Down";
+  if (input.wasPressed(Input::Button::Left))  key = "Left";
+  if (input.wasPressed(Input::Button::Right)) key = "Right";
+
+  static bool firstFrame = true;
+  if (firstFrame) {
+    key = "Press a button";
+    firstFrame = false;
+  }
+
+  if (key) {
+    Graphic& g = Graphic::getInstance();
+    g.drawBox(0, 0, g.getWidth(), g.getHeight(), BoxOpts{.fill = true, .black = false});
+    const EpdFontFamily& font = getFontFamilyById(NOTOSANS_18_FONT_ID);
+    const TextOpts opts{.font = &font};
+    const int tw = g.getTextWidth(key, opts);
+    const int th = g.getLineHeight(font);
+    g.drawText(key, (g.getWidth() - tw) / 2, (g.getHeight() - th) / 2, opts);
+    Display::getInstance().displayBuffer();
+  }
+}
+
+#ifdef SIMULATOR
+int main() {
+  setup();
+  SimDisplay& simDisplay = static_cast<SimDisplay&>(Display::getInstance());
+  while (!simDisplay.shouldClose()) {
+    loop();
+  }
+  return 0;
+}
 #endif
